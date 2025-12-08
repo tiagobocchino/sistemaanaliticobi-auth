@@ -1,0 +1,3 @@
+"""
+Analytics Platform - Test Suite
+"""

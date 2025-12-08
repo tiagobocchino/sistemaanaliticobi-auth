@@ -1,0 +1,17 @@
+# FastAPI
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Supabase
+supabase
+
+# Environment variables
+python-dotenv
+
+# Data validation
+pydantic-settings
+
+# Development (optional)
+httpx
+requests
