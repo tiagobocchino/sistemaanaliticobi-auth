@@ -4,6 +4,40 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './AnalysisView.css';
 
+// Power BI Dashboards configuration (temporary import - should be from API)
+const POWERBI_DASHBOARDS = {
+  "compras": {
+    "nome": "Dashboard - Compras - DW",
+    "descricao": "Dashboard de compras do Data Warehouse",
+    "tipo": "powerbi",
+    "embed_url": "https://app.powerbi.com/reportEmbed?reportId=32dfd7cf-1c98-4667-aac0-792638f9b675&autoAuth=true&ctid=5525a7a8-3e38-460d-8967-c5260af8e9ea",
+    "iframe_html": '<iframe title="Dashboard - Compras - DW (1)" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=32dfd7cf-1c98-4667-aac0-792638f9b675&autoAuth=true&ctid=5525a7a8-3e38-460d-8967-c5260af8e9ea" frameborder="0" allowFullScreen="true"></iframe>',
+    "publico": false,
+    "divisoes_permitidas": ["FIN"],
+    "nivel_acesso_minimo": 4
+  },
+  "sdrs": {
+    "nome": "Dashboard - SDRs (TV) v2.0",
+    "descricao": "Dashboard de acompanhamento dos SDRs de TV",
+    "tipo": "powerbi",
+    "embed_url": "https://app.powerbi.com/view?r=eyJrIjoiZWFjNWE1M2UtOGJmZi00YmU4LWIzNjAtYmE0OTY3YWIwOGY4IiwidCI6IjU1MjVhN2E4LTNlMzgtNDYwZC04OTY3LWM1MjYwYWY4ZTllYSJ9",
+    "iframe_html": '<iframe title="Dashboard - SDRs (TV) v2.0" width="600" height="373.5" src="https://app.powerbi.com/view?r=eyJrIjoiZWFjNWE1M2UtOGJmZi00YmU4LWIzNjAtYmE0OTY3YWIwOGY4IiwidCI6IjU1MjVhN2E4LTNlMzgtNDYwZC04OTY3LWM1MjYwYWY4ZTllYSJ9" frameborder="0" allowFullScreen="true"></iframe>',
+    "publico": false,
+    "divisoes_permitidas": ["COM"],
+    "nivel_acesso_minimo": 4
+  },
+  "pastas": {
+    "nome": "Dashboard - Contratos",
+    "descricao": "Dashboard de contratos e pastas",
+    "tipo": "powerbi",
+    "embed_url": "https://app.powerbi.com/reportEmbed?reportId=40da54e1-9a7d-466d-8f60-c5efe35bd69e&autoAuth=true&ctid=5525a7a8-3e38-460d-8967-c5260af8e9ea",
+    "iframe_html": '<iframe title="Dashboard Contratos - 2.0v-19nov" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=40da54e1-9a7d-466d-8f60-c5efe35bd69e&autoAuth=true&ctid=5525a7a8-3e38-460d-8967-c5260af8e9ea" frameborder="0" allowFullScreen="true"></iframe>',
+    "publico": false,
+    "divisoes_permitidas": ["COM"],
+    "nivel_acesso_minimo": 4
+  }
+};
+
 const AnalysisView = () => {
   const { analysisId } = useParams();
   const navigate = useNavigate();
@@ -19,6 +53,34 @@ const AnalysisView = () => {
   const fetchAnalysis = async () => {
     try {
       setLoading(true);
+
+      // First, check if it's a Power BI dashboard key
+      if (POWERBI_DASHBOARDS[analysisId]) {
+        // Verify user has access to this Power BI dashboard
+        try {
+          const accessResponse = await api.get('/analyses/powerbi-dashboards');
+          if (accessResponse.data[analysisId]) {
+            setAnalysis({
+              id: analysisId,
+              ...POWERBI_DASHBOARDS[analysisId]
+            });
+            setError('');
+            setLoading(false);
+            return;
+          } else {
+            setError('Você não tem permissão para acessar este dashboard.');
+            setLoading(false);
+            return;
+          }
+        } catch (accessErr) {
+          console.error('Error checking dashboard access:', accessErr);
+          setError('Erro ao verificar permissões de acesso.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If not a Power BI dashboard, try to fetch from database
       const response = await api.get(`/analyses/${analysisId}`);
       setAnalysis(response.data);
       setError('');

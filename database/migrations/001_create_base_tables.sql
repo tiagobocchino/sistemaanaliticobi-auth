@@ -31,6 +31,23 @@ CREATE INDEX IF NOT EXISTS idx_cargos_nivel_acesso ON public.cargos(nivel_acesso
 -- =====================================================
 -- 2. TABELA DE DIVISÕES
 -- =====================================================
+
+-- Verificar e atualizar estrutura da tabela divisoes se necessário
+DO $$
+BEGIN
+    -- Se a tabela existe mas não tem a coluna codigo, adicioná-la
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'divisoes'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'divisoes' AND column_name = 'codigo'
+    ) THEN
+        ALTER TABLE public.divisoes ADD COLUMN codigo VARCHAR(20) UNIQUE;
+        RAISE NOTICE 'Coluna codigo adicionada à tabela divisoes';
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.divisoes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(100) NOT NULL UNIQUE,

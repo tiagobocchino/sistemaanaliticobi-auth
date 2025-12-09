@@ -4,6 +4,14 @@ Authentication service using Supabase Auth
 from typing import Optional
 from gotrue.errors import AuthApiError
 from src.supabase_client import supabase_client, supabase_admin_client
+
+
+class AuthenticationError(Exception):
+    """Custom authentication error for our application"""
+    def __init__(self, message: str, status_code: int = 400):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)
 from src.auth.models import (
     UserSignUp,
     UserSignIn,
@@ -49,7 +57,7 @@ class AuthService:
             })
 
             if not response.user:
-                raise AuthApiError("Failed to create user")
+                raise AuthenticationError("Falha ao criar usuário")
 
             # Verificar se email precisa confirmação
             if not response.session:
@@ -97,7 +105,9 @@ class AuthService:
                 )
             )
         except AuthApiError as e:
-            raise AuthApiError(f"Sign up failed: {str(e)}")
+            raise AuthenticationError(f"Cadastro falhou: {str(e)}")
+        except Exception as e:
+            raise AuthenticationError(f"Erro inesperado no cadastro: {str(e)}")
 
     async def _create_user_profile(self, user_id: str, email: str, nome: str, cargo_id: str, divisao_id: str):
         """
@@ -143,7 +153,7 @@ class AuthService:
             })
 
             if not response.user:
-                raise AuthApiError("Invalid credentials")
+                raise AuthenticationError("Credenciais inválidas")
 
             user_metadata = response.user.user_metadata or {}
 
@@ -163,11 +173,11 @@ class AuthService:
         except AuthApiError as e:
             error_msg = str(e)
             print(f"AuthApiError during sign_in: {error_msg}")
-            raise AuthApiError(f"Falha no login: {error_msg}")
+            raise AuthenticationError(f"Falha no login: {error_msg}")
         except Exception as e:
             error_msg = str(e)
             print(f"Unexpected error during sign_in: {error_msg}")
-            raise AuthApiError(f"Erro inesperado: {error_msg}")
+            raise AuthenticationError(f"Erro inesperado: {error_msg}")
 
     async def sign_out(self, access_token: str) -> bool:
         """
@@ -202,7 +212,7 @@ class AuthService:
             response = self.client.auth.refresh_session(refresh_token)
 
             if not response.user:
-                raise AuthApiError("Failed to refresh token")
+                raise AuthenticationError("Falha ao renovar token")
 
             user_metadata = response.user.user_metadata or {}
 
@@ -220,7 +230,9 @@ class AuthService:
                 )
             )
         except AuthApiError as e:
-            raise AuthApiError(f"Token refresh failed: {str(e)}")
+            raise AuthenticationError(f"Falha ao renovar token: {str(e)}")
+        except Exception as e:
+            raise AuthenticationError(f"Erro inesperado na renovação: {str(e)}")
 
     async def get_user(self, access_token: str) -> Optional[UserResponse]:
         """

@@ -11,6 +11,8 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import AnalysisList from './pages/AnalysisList';
 import AnalysisView from './pages/AnalysisView';
+import PythonAnalyses from './pages/PythonAnalyses';
+import Agents from './pages/Agents';
 import SystemTest from './pages/SystemTest';
 
 function App() {
@@ -19,7 +21,8 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Rotas Públicas */}
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/test" element={<SystemTest />} />
@@ -57,6 +60,28 @@ function App() {
           >
             <Route index element={<AnalysisList />} />
             <Route path=":analysisId" element={<AnalysisView />} />
+          </Route>
+
+          <Route
+            path="/python-analyses"
+            element={
+              <PrivateRoute>
+                <MainLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<PythonAnalyses />} />
+          </Route>
+
+          <Route
+            path="/agents"
+            element={
+              <PrivateRoute>
+                <MainLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<Agents />} />
           </Route>
 
           {/* Redireciona rotas não encontradas para home */}

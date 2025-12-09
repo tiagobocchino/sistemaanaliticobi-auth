@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from .models import AnalysisCreate, AnalysisUpdate, AnalysisResponse
+from .powerbi_dashboards import PowerBIDashboards
 from ..supabase_client import supabase_client
 
 
@@ -18,12 +19,17 @@ class AnalysisService:
             # Get user details with role and division
             user_response = self.client.table("usuarios").select("""
                 id, nome, email, ativo,
-                cargos!inner(nome, nivel_acesso),
-                divisoes!inner(id, nome, codigo)
+                cargos!left(nome, nivel_acesso),
+                divisoes!left(id, nome, codigo)
             """).eq("id", str(user_id)).single().execute()
 
             if not user_response.data:
-                return {"can_access_all": False, "user_division_id": None, "user_role_level": 0}
+                return {
+                    "can_access_all": False,
+                    "user_division_id": None,
+                    "user_division_code": None,
+                    "user_role_level": 0
+                }
 
             user_data = user_response.data
             cargo_data = user_data.get("cargos", {})
@@ -32,12 +38,18 @@ class AnalysisService:
             return {
                 "can_access_all": cargo_data.get("nivel_acesso", 0) >= 4,  # Master/Diretor/Gerente
                 "user_division_id": divisao_data.get("id"),
+                "user_division_code": divisao_data.get("codigo"),  # Código da divisão (TI, RH, FIN, etc.)
                 "user_role_level": cargo_data.get("nivel_acesso", 0)
             }
 
         except Exception as e:
             print(f"Error getting user permissions: {e}")
-            return {"can_access_all": False, "user_division_id": None, "user_role_level": 0}
+            return {
+                "can_access_all": False,
+                "user_division_id": None,
+                "user_division_code": None,
+                "user_role_level": 0
+            }
 
     def user_can_access_analysis(self, user_permissions: Dict[str, Any], analysis: Dict[str, Any]) -> bool:
         """Check if user can access a specific analysis"""
@@ -56,22 +68,30 @@ class AnalysisService:
         # Default: no access
         return False
 
+    async def get_powerbi_dashboards_for_user(self, user_id: UUID) -> Dict[str, Dict[str, Any]]:
+        """Get Power BI dashboards that a user can access based on specific rules"""
+        try:
+            user_permissions = await self.get_user_permissions(user_id)
+            return PowerBIDashboards.get_accessible_dashboards_for_user(user_permissions)
+
+        except Exception as e:
+            print(f"Error getting Power BI dashboards for user: {e}")
+            return {}
+
     async def get_analyses_for_user(self, user_id: UUID) -> List[AnalysisResponse]:
-        """Get all analyses that a user can access"""
+        """Get all analyses that a user can access (from database + Power BI dashboards)"""
         try:
             user_permissions = await self.get_user_permissions(user_id)
 
-            # Get all analyses
+            # Get all analyses from database
             response = self.client.table("analyses").select("*").execute()
 
-            if not response.data:
-                return []
-
-            # Filter analyses based on user permissions
             accessible_analyses = []
-            for analysis in response.data:
-                if self.user_can_access_analysis(user_permissions, analysis):
-                    accessible_analyses.append(AnalysisResponse(**analysis))
+            if response.data:
+                # Filter analyses based on user permissions
+                for analysis in response.data:
+                    if self.user_can_access_analysis(user_permissions, analysis):
+                        accessible_analyses.append(AnalysisResponse(**analysis))
 
             return accessible_analyses
 

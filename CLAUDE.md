@@ -824,8 +824,8 @@ Acesso: http://localhost:5173
 
 ---
 
-**Última Atualização**: 2024-12-08
-**Atualizado por**: Claude (Sessão 11 - Correção Login e Testes)
+**Última Atualização**: 2024-12-09
+**Atualizado por**: Claude (Sessão 12 - Row Level Security e Novas Funcionalidades)
 **Status Atual**: Sistema Validado e Funcionando ✅
 **Servidores**:
   - Backend API: http://localhost:8000 (FastAPI + Supabase)
@@ -1192,6 +1192,180 @@ Produzir → Testar → Avaliar (85%?) → Se PASSOU: Próximo / Se FALHOU: Corr
   - Acurácia mantida em 87.50% (threshold: 85%)
 
 **Deploy Status**: ✅ COMPLETED - Sistema em produção no Git
+
+### 2024-12-09
+
+#### Sessão 12: Row Level Security e Novas Funcionalidades (CONCLUÍDA)
+- ✅ **Revisão Completa do Projeto**
+  - Exploração completa file-by-file usando Explore agent
+  - Gerado relatório detalhado da estrutura atual
+  - Identificados 4 arquivos duplicados/obsoletos na raiz
+
+- ✅ **Limpeza de Arquivos Duplicados**
+  - Removidos arquivos obsoletos da raiz:
+    - `MainLayout.jsx` (duplicado - já existe em frontend/src/components/)
+    - `dependencies.py` (obsoleto - funcionalidade movida para src/)
+    - `models.py` (obsoleto)
+    - `routes.py` (obsoleto)
+  - Criado backup em `_backup_obsolete_files/`
+  - Projeto agora tem estrutura limpa e organizada
+
+- ✅ **Configuração Login como Página Inicial**
+  - Modificado `frontend/src/App.jsx`:
+    - Rota "/" agora redireciona para "/login"
+    - Rota "/home" mantida para landing page
+  - Modificado `frontend/src/pages/Login.jsx`:
+    - Adicionado useEffect para redirecionar usuários já logados para dashboard
+  - Modificado `frontend/src/pages/Signup.jsx`:
+    - Adicionado mesmo comportamento de redirecionamento
+
+- ✅ **Correção Sistema de Registro no Supabase**
+  - Identificado problema: Frontend não envia cargo_id/divisao_id no signup
+  - Criado `supabase_trigger_create_user.sql`:
+    - Trigger automático `on_auth_user_created`
+    - Função `handle_new_user()` que cria perfil em public.usuarios
+    - Usa NULLIF para tratar cargo_id/divisao_id vazios
+  - Criado `INSTRUCOES_SUPABASE_TRIGGER.md` com guia passo-a-passo
+  - Usuário confirmou aplicação bem-sucedida do trigger
+
+- ✅ **Correção Estrutura da Tabela Usuarios**
+  - Identificado erro: cargo_id e divisao_id eram NOT NULL
+  - Criado `fix_usuarios_constraints.sql`:
+    ```sql
+    ALTER TABLE public.usuarios ALTER COLUMN cargo_id DROP NOT NULL;
+    ALTER TABLE public.usuarios ALTER COLUMN divisao_id DROP NOT NULL;
+    ALTER TABLE public.usuarios ALTER COLUMN id SET NOT NULL;
+    ```
+  - Tabela agora permite usuários sem cargo/divisão atribuídos
+
+- ✅ **Sistema de Row Level Security (RLS)**
+  - **ERRO CRÍTICO IDENTIFICADO**: Backend usava coluna "role" inexistente
+  - **CORREÇÃO IMPLEMENTADA**: Sistema usa `cargos.nivel_acesso` (integer 1-5)
+  - Corrigido `src/auth/dependencies.py`:
+    - Mudado de tabela "users" para "usuarios"
+    - Mudado de `user.role == "admin"` para `nivel_acesso >= 5`
+    - Mudado de INNER JOIN para LEFT JOIN (handle NULL cargo_id)
+
+  - Criado `RLS_FINAL_CORRETO.sql` (script final correto):
+    - 16 políticas RLS totais distribuídas em 4 tabelas
+    - **Tabela cargos** (2 políticas):
+      - `cargos_select`: Todos podem ler cargos ativos
+      - `cargos_manage`: Apenas nivel_acesso = 5 pode gerenciar
+    - **Tabela divisoes** (2 políticas):
+      - `divisoes_select`: Todos podem ler divisões ativas
+      - `divisoes_manage`: Apenas nivel_acesso = 5 pode gerenciar
+    - **Tabela usuarios** (6 políticas):
+      - `usuarios_own`: Ver próprio perfil
+      - `usuarios_high`: nivel_acesso >= 4 vê todos
+      - `usuarios_div`: Ver usuários da mesma divisão
+      - `usuarios_upd`: Atualizar apenas próprio perfil (sem alterar cargo/divisão)
+      - `usuarios_ins`: Apenas nivel_acesso = 5 pode criar
+      - `usuarios_del`: Apenas nivel_acesso = 5 pode deletar
+    - **Tabela analyses** (6 políticas):
+      - `analyses_pub`: Todos veem análises públicas
+      - `analyses_div`: Ver análises da própria divisão
+      - `analyses_high`: nivel_acesso >= 4 vê todas
+      - `analyses_ins`: Apenas nivel_acesso = 5 pode criar
+      - `analyses_upd`: Apenas nivel_acesso = 5 pode atualizar
+      - `analyses_del`: Apenas nivel_acesso = 5 pode deletar
+    - **Correção crítica**: Todas as policies usam LEFT JOIN (não INNER JOIN)
+    - **Motivo**: INNER JOIN falha quando cargo_id é NULL
+
+  - Criado `LIMPAR_E_APLICAR_RLS.sql` (script com limpeza automática)
+  - Criado `INSTRUCOES_RLS.md` com documentação completa
+
+- ✅ **Páginas de Funcionalidades Futuras**
+  - Criado `frontend/src/pages/PythonAnalyses.jsx`:
+    - Página "Coming Soon" com design moderno
+    - Descrição das funcionalidades planejadas
+    - Links de navegação para outras áreas
+  - Criado `frontend/src/pages/Agents.jsx`:
+    - Página "Coming Soon" para sistema de agentes IA
+    - Design consistente com PythonAnalyses
+  - Criado `frontend/src/styles/PythonAnalyses.css`
+  - Criado `frontend/src/styles/Agents.css`
+  - Modificado `frontend/src/App.jsx`:
+    - Adicionadas rotas `/python-analyses` e `/agents`
+  - Modificado `frontend/src/components/MainLayout.jsx`:
+    - Adicionados links na sidebar com ícones:
+      - 📊 Dashboard
+      - 📈 Power BI
+      - 🐍 Python
+      - 🤖 Agentes IA
+      - 👥 Gerenciar Usuários (apenas admin)
+
+- ✅ **Home Page Interativa**
+  - Modificado `frontend/src/pages/Home.jsx`:
+    - Cartões de funcionalidades agora são clicáveis
+    - Usar Link do react-router-dom
+    - Redireciona para login se não autenticado
+    - Redireciona para página específica se autenticado
+    - Adicionada seta → indicando clicabilidade
+
+- ✅ **Preparação Power BI Integration**
+  - Criado `update_powerbi_links.sql`:
+    - Template para atualizar links dos dashboards
+    - Aguardando links reais do usuário:
+      1. Dashboard SDRs (TV) v2.0
+      2. Dashboard Compras - DW
+
+- ✅ **Documentação da Sessão**
+  - Criado `RESUMO_SESSAO_09-12-2024.md`:
+    - Resumo completo de todas as mudanças
+    - Estrutura antes/depois
+    - Lista de arquivos criados/modificados/removidos
+    - Próximos passos pendentes
+
+**Lições Aprendidas**:
+- ⚠️ SEMPRE verificar estrutura real do banco antes de criar scripts SQL
+- ⚠️ Sistema usa `cargos.nivel_acesso` (NOT "role" column)
+- ⚠️ Tabela é "usuarios" (NOT "users")
+- ⚠️ SEMPRE usar LEFT JOIN quando foreign key pode ser NULL
+- ⚠️ INNER JOIN falha com erro "uuid = integer" quando cargo_id é NULL
+
+**Arquivos Criados**:
+- `supabase_trigger_create_user.sql`
+- `INSTRUCOES_SUPABASE_TRIGGER.md`
+- `fix_usuarios_constraints.sql`
+- `RLS_FINAL_CORRETO.sql`
+- `LIMPAR_E_APLICAR_RLS.sql`
+- `INSTRUCOES_RLS.md`
+- `frontend/src/pages/PythonAnalyses.jsx`
+- `frontend/src/pages/Agents.jsx`
+- `frontend/src/styles/PythonAnalyses.css`
+- `frontend/src/styles/Agents.css`
+- `update_powerbi_links.sql`
+- `RESUMO_SESSAO_09-12-2024.md`
+- `_backup_obsolete_files/` (diretório)
+
+**Arquivos Modificados**:
+- `frontend/src/App.jsx` (rotas para login, python, agents)
+- `frontend/src/pages/Login.jsx` (redirect se já logado)
+- `frontend/src/pages/Signup.jsx` (redirect se já logado)
+- `frontend/src/pages/Home.jsx` (cartões clicáveis)
+- `frontend/src/components/MainLayout.jsx` (sidebar com ícones)
+- `src/auth/dependencies.py` (corrigido admin check)
+
+**Arquivos Removidos**:
+- `MainLayout.jsx` (raiz)
+- `MainLayout.css` (raiz)
+- `dependencies.py` (raiz)
+- `models.py` (raiz)
+- `routes.py` (raiz)
+
+**Status Atual**:
+- ✅ Estrutura de arquivos limpa e organizada
+- ✅ Login configurado como página inicial
+- ✅ Trigger de criação de perfis funcionando
+- ✅ Tabela usuarios com constraints corretos
+- ✅ Backend corrigido (nivel_acesso, LEFT JOIN)
+- ✅ Scripts RLS criados e documentados
+- ✅ Páginas futuras (Python, Agents) implementadas
+- ✅ Home page interativa
+- ⏳ RLS pendente de aplicação pelo usuário
+- ⏳ Links Power BI pendentes
+- ⏳ Atribuir cargo admin ao usuário
+- ⏳ Testes completos do sistema
 
 #### Sessão 9: Fase 3 - Power BI Integration (IMPLEMENTADA)
 - ✅ **Arquitetura Power BI Completa**

@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Auth.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signin } = useAuth();
+  const { signin, user } = useAuth();
+
+  // Redireciona se já estiver logado
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [formData, setFormData] = useState({
     email: '',

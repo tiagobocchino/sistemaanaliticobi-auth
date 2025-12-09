@@ -14,18 +14,24 @@ const Home = () => {
         </p>
 
         <div className="features">
-          <div className="feature">
+          <Link to={isAuthenticated ? "/analyses" : "/login"} className="feature feature-link">
+            <div className="feature-icon">📊</div>
             <h3>Power BI Integrado</h3>
             <p>Visualize seus dashboards com controle de acesso</p>
-          </div>
-          <div className="feature">
+            <span className="feature-arrow">→</span>
+          </Link>
+          <Link to={isAuthenticated ? "/python-analyses" : "/login"} className="feature feature-link">
+            <div className="feature-icon">🐍</div>
             <h3>Análises Python</h3>
             <p>Crie análises customizadas direto na plataforma</p>
-          </div>
-          <div className="feature">
+            <span className="feature-arrow">→</span>
+          </Link>
+          <Link to={isAuthenticated ? "/agents" : "/login"} className="feature feature-link">
+            <div className="feature-icon">🤖</div>
             <h3>Agentes Inteligentes</h3>
             <p>Obtenha insights rápidos com IA</p>
-          </div>
+            <span className="feature-arrow">→</span>
+          </Link>
         </div>
 
         <div className="home-actions">
