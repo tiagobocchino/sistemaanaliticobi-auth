@@ -5,7 +5,7 @@
 ### **1️⃣ LIMPAR CACHE (Primeira vez ou se houver problemas)**
 
 ```bash
-LIMPAR_TUDO.bat
+scripts/LIMPAR_TUDO.bat
 ```
 
 **Depois:**
@@ -18,7 +18,7 @@ LIMPAR_TUDO.bat
 ### **2️⃣ INICIAR SISTEMA**
 
 ```bash
-INICIAR_SISTEMA_LIMPO.bat
+scripts/INICIAR_SISTEMA.bat
 ```
 
 **Vai abrir 2 terminais automaticamente:**
@@ -109,11 +109,11 @@ python reset_password.py
 ### **"Dashboards não aparecem"**
 **Solução:**
 ```bash
-LIMPAR_TUDO.bat
+scripts/LIMPAR_TUDO.bat
 # Fechar navegadores
 # Fechar Cursor
 # Reabrir Cursor
-INICIAR_SISTEMA_LIMPO.bat
+scripts/INICIAR_SISTEMA.bat
 ```
 
 ### **"Erro ao fazer login"**
@@ -139,8 +139,8 @@ INICIAR_SISTEMA_LIMPO.bat
 
 ```
 analytcs/
-├── LIMPAR_TUDO.bat              ← Limpar cache
-├── INICIAR_SISTEMA_LIMPO.bat    ← Iniciar tudo
+├── scripts/LIMPAR_TUDO.bat              ← Limpar cache
+├── scripts/INICIAR_SISTEMA.bat    ← Iniciar tudo
 ├── main.py                      ← Backend
 ├── frontend/                    ← Frontend React
 ├── src/                         ← Código backend
@@ -153,10 +153,10 @@ analytcs/
 ## 🎯 **FLUXO TÍPICO:**
 
 ```
-1. LIMPAR_TUDO.bat
+1. scripts/LIMPAR_TUDO.bat
 2. Fechar tudo
 3. Reabrir Cursor
-4. INICIAR_SISTEMA_LIMPO.bat
+4. scripts/INICIAR_SISTEMA.bat
 5. Aguardar servidores iniciarem
 6. Abrir http://localhost:5173/login
 7. Login: tiago.bocchino@4pcapital.com.br / Admin123!@#

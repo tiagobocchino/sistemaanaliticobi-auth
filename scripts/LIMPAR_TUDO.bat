@@ -74,7 +74,7 @@ echo PROXIMOS PASSOS:
 echo   1. Feche TODOS os navegadores abertos
 echo   2. Feche o Cursor/VS Code
 echo   3. Reabra o Cursor
-echo   4. Execute: INICIAR_SISTEMA_LIMPO.bat
+echo   4. Execute: scripts/INICIAR_SISTEMA.bat
 echo.
 echo ================================================================================
 pause
