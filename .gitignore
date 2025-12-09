@@ -93,3 +93,9 @@ ROADMAP_*.md
 AZURE_SETUP_GUIDE.md
 POWERBI_ENV_SETUP.md
 phase3_powerbi_init.py
+
+# API Credentials - HIGHLY SENSITIVE
+api_credentials.env
+*credentials*.env
+*token*.env
+*secret*.env

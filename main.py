@@ -38,6 +38,10 @@ app.include_router(users_router)
 from src.analyses.routes import router as analyses_router
 app.include_router(analyses_router)
 
+# Include agents routes
+from src.agents.routes import router as agents_router
+app.include_router(agents_router)
+
 
 @app.get("/")
 async def root():
