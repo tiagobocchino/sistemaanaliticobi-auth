@@ -18,7 +18,11 @@ def create_admin_user():
     supabase: Client = create_client(url, key)
 
     admin_email = os.environ.get("ADMIN_EMAIL", "tiago.bocchino@4pcapital.com.br")
-    admin_password = os.environ.get("ADMIN_PASSWORD", "Master123#")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    if not admin_password:
+        print("❌ ERRO: ADMIN_PASSWORD não definida no arquivo .env")
+        print("   Adicione ao .env: ADMIN_PASSWORD=sua_senha_segura_aqui")
+        return
     admin_full_name = os.environ.get("ADMIN_NAME", "Usuário Master")
 
     print(f"Tentando criar o usuário: {admin_email}...")

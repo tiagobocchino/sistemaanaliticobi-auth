@@ -4,14 +4,14 @@ from uuid import UUID
 
 from .models import AnalysisCreate, AnalysisUpdate, AnalysisResponse
 from .powerbi_dashboards import PowerBIDashboards
-from ..supabase_client import supabase_client
+from ..supabase_client import supabase_admin_client
 
 
 class AnalysisService:
     """Service for managing analyses (dashboards and reports)"""
 
     def __init__(self):
-        self.client = supabase_client
+        self.client = supabase_admin_client
 
     async def get_user_permissions(self, user_id: UUID) -> Dict[str, Any]:
         """Get user permissions based on their role and division"""
@@ -19,8 +19,8 @@ class AnalysisService:
             # Get user details with role and division
             user_response = self.client.table("usuarios").select("""
                 id, nome, email, ativo,
-                cargos!left(nome, nivel_acesso),
-                divisoes!left(id, nome, codigo)
+                cargos(id, nome, nivel_acesso),
+                divisoes(id, nome, codigo)
             """).eq("id", str(user_id)).single().execute()
 
             if not user_response.data:

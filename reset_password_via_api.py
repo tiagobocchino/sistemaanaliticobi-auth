@@ -60,7 +60,7 @@ def main():
     print("🔑 RESETANDO SENHAS DOS USUÁRIOS")
     print("=" * 50)
 
-    new_password = "Admin123!@#"
+    new_password = os.getenv("ADMIN_PASSWORD", "Admin123!@#")
 
     users = [
         "tiago.bocchino@4pcapital.com.br",
@@ -75,10 +75,10 @@ def main():
     print("=" * 50)
     if success_count == len(users):
         print(f"🎉 SUCESSO: {success_count}/{len(users)} senhas resetadas!")
-        print(f"📧 NOVA SENHA: {new_password}")
+        print(f"📧 NOVA SENHA: {'*' * len(new_password)} (oculta por segurança)")
         print("\nPara fazer login:")
         print("1. Acesse: http://localhost:5173/login")
-        print(f"2. Use a senha: {new_password}")
+        print(f"2. Use a senha: {'*' * len(new_password)} (oculta por segurança)")
         print("3. Teste os dashboards: http://localhost:5173/analyses")
     else:
         print(f"❌ FALHA: Apenas {success_count}/{len(users)} senhas resetadas")
