@@ -59,28 +59,19 @@ class AnalyticsAgent:
 
     def _setup_llm(self):
         """
-        Configura o modelo de IA
+        Configura o modelo de IA (prioriza Ollama local, depois Groq, depois OpenAI)
         """
-        # Op+║+·o 1: Usar OpenAI (requer chave API paga)
-        openai_key = os.getenv("OPENAI_API_KEY")
-        if openai_key:
-            return OpenAIChat(
-                id="gpt-4o-mini",  # Modelo mais barato
-                api_key=openai_key
-            )
-
-        # Op+║+·o 2: Usar Ollama local (gratuito, roda na m+Ýquina)
-        # Requer Ollama instalado com modelo baixado
+        # Preferência 1: Ollama local
         try:
             return OpenAIChat(
                 id="llama3.2",
                 base_url="http://localhost:11434/v1",
-                api_key="ollama"  # Ollama n+·o precisa de key real
+                api_key="ollama"
             )
-        except:
+        except Exception:
             pass
 
-        # Op+║+·o 3: Usar Groq (gratuito com limite)
+        # Preferência 2: Groq (se chave estiver configurada)
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key:
             return OpenAIChat(
@@ -89,8 +80,15 @@ class AnalyticsAgent:
                 api_key=groq_key
             )
 
-        # Fallback: usar mock (retorna respostas gen+«ricas)
-        print("È▄ß┤®┼ Nenhum modelo de IA configurado. Use Ollama local ou configure OPENAI_API_KEY")
+        # Preferência 3: OpenAI (se chave estiver configurada)
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            return OpenAIChat(
+                id="gpt-4o-mini",
+                api_key=openai_key
+            )
+
+        print("Nenhum modelo de IA configurado. Use Ollama local ou configure GROQ_API_KEY/OPENAI_API_KEY")
         return None
 
     async def process_query(
@@ -531,6 +529,9 @@ IMPORTANTE:
 
 # Inst+¾ncia global
 analytics_agent = AnalyticsAgent()
+
+
+
 
 
 
