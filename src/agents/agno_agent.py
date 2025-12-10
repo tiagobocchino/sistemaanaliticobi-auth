@@ -319,25 +319,61 @@ IMPORTANTE:
         explanation: AnalysisExplanation
     ) -> str:
         """
-        Formata resposta do fallback
+        Formata resposta do fallback de forma mais humanizada
         """
-        lines = [f"## An+Ýlise: {intent.capitalize()}\n"]
+        def fmt_currency(val: float) -> str:
+            try:
+                return f"R$ {val:,.2f}"
+            except Exception:
+                return str(val)
 
-        # Adicionar dados
-        for source, source_data in data.items():
-            lines.append(f"\n### Dados de {source.upper()}:")
-            if isinstance(source_data, dict):
-                for key, value in source_data.items():
-                    if isinstance(value, (int, float)):
-                        if isinstance(value, float) and value > 1000:
-                            lines.append(f"- **{key}**: R$ {value:,.2f}")
-                        else:
-                            lines.append(f"- **{key}**: {value}")
-                    elif isinstance(value, dict) and "total" in value:
-                        lines.append(f"- **{key}**: R$ {value['total']:,.2f} ({value.get('quantidade', 0)} itens)")
+        def fmt_percent(val: float) -> str:
+            try:
+                return f"{val*100:.2f}%"
+            except Exception:
+                return str(val)
 
-        # Adicionar link para explica+║+·o detalhada
-        lines.append("\n### ¡â¶´ Explica+║+·o Detalhada")
+        lines: list[str] = []
+
+        if intent == "vendas":
+            cv = data.get("cvdw", {}) if isinstance(data.get("cvdw"), dict) else {}
+            vendas = cv.get("oportunidades_abertas")
+            pipeline = cv.get("valor_pipeline")
+            conversao = cv.get("taxa_conversao")
+
+            resumo = "Aqui vai um panorama rápido das vendas:"
+            linhas_resumo: list[str] = []
+            if vendas is not None:
+                linhas_resumo.append(f"- Temos {vendas} oportunidades abertas no mês.")
+            if pipeline is not None:
+                linhas_resumo.append(f"- Pipeline estimado em {fmt_currency(pipeline)}.")
+            if conversao is not None:
+                linhas_resumo.append(f"- Taxa de conversão atual: {fmt_percent(conversao)}.")
+
+            if linhas_resumo:
+                lines.append(resumo)
+                lines.extend(linhas_resumo)
+
+            if conversao is not None:
+                lines.append(
+                    "\nInsight: se mantivermos essa conversão, o potencial de fechamento sobre o pipeline é promissor. "
+                    "Compare com o mesmo período do mês passado para confirmar tendência."
+                )
+
+            lines.append("\nFonte: consultei o módulo de vendas do CVCRM (endpoint `/oportunidades`).")
+
+        else:
+            lines.append(f"Entendi sua pergunta sobre {intent}. Vou detalhar o que encontrei:\n")
+            for source, source_data in data.items():
+                lines.append(f"- Fonte {source.upper()}:")
+                if isinstance(source_data, dict):
+                    for key, value in source_data.items():
+                        if isinstance(value, (int, float)) and key != "taxa_conversao":
+                            lines.append(f"  • {key}: {fmt_currency(value) if value > 1000 else value}")
+                        elif key == "taxa_conversao":
+                            lines.append(f"  • taxa_conversao: {fmt_percent(value)}")
+
+        lines.append("\n---\nDetalhamento técnico (camadas consultadas):")
         lines.append(self.explainer.format_explanation_as_text(explanation))
 
         return "\n".join(lines)
@@ -495,5 +531,6 @@ IMPORTANTE:
 
 # Inst+¾ncia global
 analytics_agent = AnalyticsAgent()
+
 
 
