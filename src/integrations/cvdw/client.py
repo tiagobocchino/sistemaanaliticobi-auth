@@ -15,7 +15,8 @@ class CVDWClient(BaseAPIClient):
 
     def __init__(self):
         # Base URL da API CVDW
-        base_url = os.getenv("CVDW_BASE_URL", "https://desenvolvedor.cvcrm.com.br")
+        # Default para API real (ajustável via CVDW_BASE_URL)
+        base_url = os.getenv("CVDW_BASE_URL", "https://bpincorporadora.cvcrm.com.br/api/v1/cvdw")
 
         # Configurações específicas do CVDW
         self.api_key = self._get_api_key()
@@ -36,7 +37,8 @@ class CVDWClient(BaseAPIClient):
             headers.update({
                 'X-API-Key': self.api_key,
                 'X-Account-ID': self.account_id or '',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             })
 
         return headers
