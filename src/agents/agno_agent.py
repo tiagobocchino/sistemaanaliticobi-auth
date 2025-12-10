@@ -11,7 +11,7 @@ import json
 from agno.agent import Agent, RunOutput
 from agno.models.openai import OpenAIChat
 
-# MÃ³dulos locais
+# M+¦dulos locais
 from .api_doc_reader import api_doc_reader, APIEndpoint
 from .analysis_explainer import analysis_explainer, AnalysisExplanation
 from .chart_generator import chart_generator, GeneratedChart
@@ -39,8 +39,8 @@ class AnalyticsAgent:
         self.chart_gen = chart_generator
 
         # Configurar modelo de IA
-        # VocÃª pode usar qualquer modelo compatÃ­vel com OpenAI API
-        # OpÃ§Ãµes gratuitas: Ollama local, Groq, etc.
+        # Voc+¬ pode usar qualquer modelo compat+¡vel com OpenAI API
+        # Op+º+Áes gratuitas: Ollama local, Groq, etc.
         self.llm = self._setup_llm()
 
         # Criar agente Agno com tools
@@ -61,7 +61,7 @@ class AnalyticsAgent:
         """
         Configura o modelo de IA
         """
-        # OpÃ§Ã£o 1: Usar OpenAI (requer chave API paga)
+        # Op+º+úo 1: Usar OpenAI (requer chave API paga)
         openai_key = os.getenv("OPENAI_API_KEY")
         if openai_key:
             return OpenAIChat(
@@ -69,18 +69,18 @@ class AnalyticsAgent:
                 api_key=openai_key
             )
 
-        # OpÃ§Ã£o 2: Usar Ollama local (gratuito, roda na mÃ¡quina)
+        # Op+º+úo 2: Usar Ollama local (gratuito, roda na m+íquina)
         # Requer Ollama instalado com modelo baixado
         try:
             return OpenAIChat(
                 id="llama3.2",
                 base_url="http://localhost:11434/v1",
-                api_key="ollama"  # Ollama nÃ£o precisa de key real
+                api_key="ollama"  # Ollama n+úo precisa de key real
             )
         except:
             pass
 
-        # OpÃ§Ã£o 3: Usar Groq (gratuito com limite)
+        # Op+º+úo 3: Usar Groq (gratuito com limite)
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key:
             return OpenAIChat(
@@ -89,8 +89,8 @@ class AnalyticsAgent:
                 api_key=groq_key
             )
 
-        # Fallback: usar mock (retorna respostas genÃ©ricas)
-        print("âš ï¸ Nenhum modelo de IA configurado. Use Ollama local ou configure OPENAI_API_KEY")
+        # Fallback: usar mock (retorna respostas gen+®ricas)
+        print("ÔÜá´©Å Nenhum modelo de IA configurado. Use Ollama local ou configure OPENAI_API_KEY")
         return None
 
     async def process_query(
@@ -100,15 +100,15 @@ class AnalyticsAgent:
         permissions: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Processa uma consulta do usuÃ¡rio usando o agente Agno
+        Processa uma consulta do usu+írio usando o agente Agno
 
         Args:
-            user_id: ID do usuÃ¡rio
+            user_id: ID do usu+írio
             query: Consulta em linguagem natural
-            permissions: PermissÃµes do usuÃ¡rio
+            permissions: Permiss+Áes do usu+írio
 
         Returns:
-            Resposta completa com anÃ¡lise, grÃ¡ficos e explicaÃ§Ã£o
+            Resposta completa com an+ílise, gr+íficos e explica+º+úo
         """
         # Contexto para o agente
         context = {
@@ -118,7 +118,7 @@ class AnalyticsAgent:
             "available_apis": []
         }
 
-        # Adicionar APIs disponÃ­veis baseado em permissÃµes
+        # Adicionar APIs dispon+¡veis baseado em permiss+Áes
         if permissions.get("can_access_sienge"):
             context["available_apis"].append("Sienge ERP")
         if permissions.get("can_access_cvdw"):
@@ -132,17 +132,19 @@ class AnalyticsAgent:
         try:
             # Executar agente (se LLM configurado)
             if self.agent.model:
-                response: RunOutput = await self.agent.arun(query, context=system_prompt)
-
-                return {
-                    "success": True,
-                    "response": response.content,
-                    "tools_used": [call.function.name for call in (response.tool_calls or [])],
-                    "explanation": None,  # SerÃ¡ preenchido se tool explain_analysis for chamada
-                    "charts": [],  # SerÃ¡ preenchido se tool generate_charts for chamada
-                }
+                try:
+                    response: RunOutput = await self.agent.arun(query, context=system_prompt)
+                    return {
+                        "success": True,
+                        "response": response.content,
+                        "tools_used": [call.function.name for call in (response.tool_calls or [])],
+                        "explanation": None,  # Será preenchido se tool explain_analysis for chamada
+                        "charts": [],  # Será preenchido se tool generate_charts for chamada
+                    }
+                except Exception:
+                    return await self._fallback_process_query(query, context)
             else:
-                # Fallback sem IA: lÃ³gica baseada em regras
+                # Fallback sem IA: lógica baseada em regras
                 return await self._fallback_process_query(query, context)
 
         except Exception as e:
@@ -151,51 +153,50 @@ class AnalyticsAgent:
                 "error": str(e),
                 "response": f"Erro ao processar consulta: {str(e)}"
             }
-
     def _build_system_prompt(self, context: Dict[str, Any]) -> str:
         """
-        ConstrÃ³i prompt de sistema para o agente
+        Constr+¦i prompt de sistema para o agente
         """
         apis_str = ", ".join(context["available_apis"])
 
-        prompt = f"""VocÃª Ã© um assistente de anÃ¡lise de dados empresariais inteligente.
+        prompt = f"""Voc+¬ +® um assistente de an+ílise de dados empresariais inteligente.
 
 SUAS CAPACIDADES:
-- VocÃª tem acesso a dados de: {apis_str}
-- VocÃª pode buscar endpoints de APIs usando a tool 'find_api_endpoints'
-- VocÃª pode buscar dados reais usando a tool 'fetch_data_from_api'
-- VocÃª pode explicar anÃ¡lises detalhadamente usando a tool 'explain_analysis'
-- VocÃª pode gerar grÃ¡ficos e visualizaÃ§Ãµes usando a tool 'generate_charts'
+- Voc+¬ tem acesso a dados de: {apis_str}
+- Voc+¬ pode buscar endpoints de APIs usando a tool 'find_api_endpoints'
+- Voc+¬ pode buscar dados reais usando a tool 'fetch_data_from_api'
+- Voc+¬ pode explicar an+ílises detalhadamente usando a tool 'explain_analysis'
+- Voc+¬ pode gerar gr+íficos e visualiza+º+Áes usando a tool 'generate_charts'
 
-PERMISSÃ•ES DO USUÃRIO:
-- NÃ­vel de acesso: {context['permissions'].get('nivel_acesso', 1)}
-- DivisÃ£o: {context['permissions'].get('divisao', 'ALL')}
-- APIs disponÃ­veis: {apis_str}
+PERMISS+òES DO USU+üRIO:
+- N+¡vel de acesso: {context['permissions'].get('nivel_acesso', 1)}
+- Divis+úo: {context['permissions'].get('divisao', 'ALL')}
+- APIs dispon+¡veis: {apis_str}
 
-SUA MISSÃƒO:
-1. Entender a pergunta do usuÃ¡rio
-2. Identificar quais endpoints/dados sÃ£o necessÃ¡rios
+SUA MISS+âO:
+1. Entender a pergunta do usu+írio
+2. Identificar quais endpoints/dados s+úo necess+írios
 3. Buscar os dados das APIs corretas
 4. Explicar claramente:
-   - Quais tabelas/fontes vocÃª estÃ¡ usando
-   - Quais colunas vocÃª estÃ¡ consultando
-   - Quais filtros vocÃª estÃ¡ aplicando
+   - Quais tabelas/fontes voc+¬ est+í usando
+   - Quais colunas voc+¬ est+í consultando
+   - Quais filtros voc+¬ est+í aplicando
    - Quais relacionamentos entre tabelas existem
-   - Quais cÃ¡lculos vocÃª estÃ¡ fazendo
-5. Gerar visualizaÃ§Ãµes (grÃ¡ficos) quando apropriado
-6. Responder em portuguÃªs de forma clara e profissional
+   - Quais c+ílculos voc+¬ est+í fazendo
+5. Gerar visualiza+º+Áes (gr+íficos) quando apropriado
+6. Responder em portugu+¬s de forma clara e profissional
 
 IMPORTANTE:
 - SEMPRE explique suas fontes de dados de forma transparente
-- SEMPRE mostre seus cÃ¡lculos e fÃ³rmulas
-- Se nÃ£o tiver certeza, pergunte ao usuÃ¡rio para esclarecer
-- Se nÃ£o tiver permissÃ£o para acessar algum dado, informe claramente
+- SEMPRE mostre seus c+ílculos e f+¦rmulas
+- Se n+úo tiver certeza, pergunte ao usu+írio para esclarecer
+- Se n+úo tiver permiss+úo para acessar algum dado, informe claramente
 """
         return prompt
 
     async def check_user_permissions(self, user_id: UUID) -> Dict[str, Any]:
         """
-        ObtÃ©m permissÃµes do usuÃ¡rio a partir do Supabase (usa service role para evitar bloqueio por RLS)
+        Obt+®m permiss+Áes do usu+írio a partir do Supabase (usa service role para evitar bloqueio por RLS)
         """
         try:
             user_response = supabase_admin_client.table("usuarios") \
@@ -217,7 +218,7 @@ IMPORTANTE:
                 "can_access_powerbi": nivel_acesso >= 2
             }
         except Exception:
-            # Fallback permissÃµes mÃ­nimas
+            # Fallback permiss+Áes m+¡nimas
             return {
                 "user_id": user_id,
                 "nivel_acesso": 1,
@@ -237,7 +238,7 @@ IMPORTANTE:
         """
         query_lower = query.lower()
 
-        # Identificar intenÃ§Ã£o por keywords
+        # Identificar inten+º+úo por keywords
         if any(word in query_lower for word in ["venda", "vendas", "faturamento"]):
             intent = "vendas"
         elif any(word in query_lower for word in ["financeiro", "contas", "pagar", "receber"]):
@@ -253,7 +254,7 @@ IMPORTANTE:
 
         permissions = context["permissions"]
 
-        # Buscar de Sienge se tiver permissÃ£o
+        # Buscar de Sienge se tiver permiss+úo
         if permissions.get("can_access_sienge") and intent == "financeiro":
             try:
                 cp = await self.sienge_client.get_contas_pagar()
@@ -270,7 +271,7 @@ IMPORTANTE:
             except:
                 pass
 
-        # Buscar de CVDW se tiver permissÃ£o
+        # Buscar de CVDW se tiver permiss+úo
         if permissions.get("can_access_cvdw") and intent in ["vendas", "clientes"]:
             try:
                 opp = await self.cvdw_client.get_oportunidades()
@@ -287,7 +288,7 @@ IMPORTANTE:
             except:
                 pass
 
-        # Criar explicaÃ§Ã£o
+        # Criar explica+º+úo
         explanation = self.explainer.create_explanation(
             query=query,
             intent=intent,
@@ -296,7 +297,7 @@ IMPORTANTE:
             data_returned=data
         )
 
-        # Gerar grÃ¡ficos
+        # Gerar gr+íficos
         charts = self.chart_gen.generate_charts_from_analysis(intent, data)
 
         # Formatar resposta
@@ -320,7 +321,7 @@ IMPORTANTE:
         """
         Formata resposta do fallback
         """
-        lines = [f"## AnÃ¡lise: {intent.capitalize()}\n"]
+        lines = [f"## An+ílise: {intent.capitalize()}\n"]
 
         # Adicionar dados
         for source, source_data in data.items():
@@ -335,8 +336,8 @@ IMPORTANTE:
                     elif isinstance(value, dict) and "total" in value:
                         lines.append(f"- **{key}**: R$ {value['total']:,.2f} ({value.get('quantidade', 0)} itens)")
 
-        # Adicionar link para explicaÃ§Ã£o detalhada
-        lines.append("\n### ðŸ“‹ ExplicaÃ§Ã£o Detalhada")
+        # Adicionar link para explica+º+úo detalhada
+        lines.append("\n### ­ƒôï Explica+º+úo Detalhada")
         lines.append(self.explainer.format_explanation_as_text(explanation))
 
         return "\n".join(lines)
@@ -345,11 +346,11 @@ IMPORTANTE:
 
     def find_api_endpoints(self, intent: str, query: str) -> str:
         """
-        Tool: Encontra endpoints relevantes nas documentaÃ§Ãµes das APIs
+        Tool: Encontra endpoints relevantes nas documenta+º+Áes das APIs
 
         Args:
-            intent: IntenÃ§Ã£o da consulta (vendas, financeiro, etc)
-            query: Query original do usuÃ¡rio
+            intent: Inten+º+úo da consulta (vendas, financeiro, etc)
+            query: Query original do usu+írio
 
         Returns:
             JSON com endpoints encontrados
@@ -379,19 +380,19 @@ IMPORTANTE:
         params: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Tool: Busca dados de uma API especÃ­fica
+        Tool: Busca dados de uma API espec+¡fica
 
         Args:
             api_name: Nome da API (sienge ou cvdw)
             endpoint: Endpoint a ser chamado
-            params: ParÃ¢metros da requisiÃ§Ã£o
+            params: Par+ómetros da requisi+º+úo
 
         Returns:
             JSON com dados retornados
         """
         try:
             if api_name.lower() == "sienge":
-                # Chamar endpoint especÃ­fico do Sienge
+                # Chamar endpoint espec+¡fico do Sienge
                 if "contas-pagar" in endpoint:
                     data = await self.sienge_client.get_contas_pagar(params)
                 elif "contas-receber" in endpoint:
@@ -399,16 +400,16 @@ IMPORTANTE:
                 elif "pedidos" in endpoint:
                     data = await self.sienge_client.get_pedidos_venda(params)
                 else:
-                    data = {"error": "Endpoint nÃ£o implementado"}
+                    data = {"error": "Endpoint n+úo implementado"}
 
             elif api_name.lower() == "cvdw" or api_name.lower() == "cvcrm":
-                # Chamar endpoint especÃ­fico do CVDW
+                # Chamar endpoint espec+¡fico do CVDW
                 if "clientes" in endpoint:
                     data = await self.cvdw_client.get_clientes(params)
                 elif "oportunidades" in endpoint:
                     data = await self.cvdw_client.get_oportunidades(params)
                 else:
-                    data = {"error": "Endpoint nÃ£o implementado"}
+                    data = {"error": "Endpoint n+úo implementado"}
             else:
                 data = {"error": f"API desconhecida: {api_name}"}
 
@@ -426,17 +427,17 @@ IMPORTANTE:
         data: Dict[str, Any]
     ) -> str:
         """
-        Tool: Explica uma anÃ¡lise detalhadamente
+        Tool: Explica uma an+ílise detalhadamente
 
         Args:
             query: Query original
-            intent: IntenÃ§Ã£o identificada
+            intent: Inten+º+úo identificada
             data_sources: Fontes de dados usadas
             endpoints: Endpoints chamados
             data: Dados retornados
 
         Returns:
-            ExplicaÃ§Ã£o formatada em markdown
+            Explica+º+úo formatada em markdown
         """
         explanation = self.explainer.create_explanation(
             query=query,
@@ -450,14 +451,14 @@ IMPORTANTE:
 
     def generate_charts(self, intent: str, data: Dict[str, Any]) -> str:
         """
-        Tool: Gera grÃ¡ficos baseado nos dados
+        Tool: Gera gr+íficos baseado nos dados
 
         Args:
-            intent: IntenÃ§Ã£o da anÃ¡lise
-            data: Dados para visualizaÃ§Ã£o
+            intent: Inten+º+úo da an+ílise
+            data: Dados para visualiza+º+úo
 
         Returns:
-            JSON com informaÃ§Ãµes dos grÃ¡ficos gerados
+            JSON com informa+º+Áes dos gr+íficos gerados
         """
         charts = self.chart_gen.generate_charts_from_analysis(intent, data)
 
@@ -481,17 +482,18 @@ IMPORTANTE:
         """
         Inicializa o agente e seus componentes
         """
-        print("ðŸ¤– Inicializando Analytics AI Agent...")
+        print("­ƒñû Inicializando Analytics AI Agent...")
 
-        # Inicializar leitor de documentaÃ§Ã£o
+        # Inicializar leitor de documenta+º+úo
         await self.doc_reader.initialize()
 
-        print("âœ… Agente inicializado com sucesso!")
+        print("Ô£à Agente inicializado com sucesso!")
         print(f"   - Modelo: {self.agent.model.id if self.agent.model else 'Fallback (sem IA)'}")
         print(f"   - Tools: {len(self.agent.tools)}")
-        print(f"   - APIs disponÃ­veis: Sienge, CVDW, Power BI")
+        print(f"   - APIs dispon+¡veis: Sienge, CVDW, Power BI")
 
 
-# InstÃ¢ncia global
+# Inst+óncia global
 analytics_agent = AnalyticsAgent()
+
 
