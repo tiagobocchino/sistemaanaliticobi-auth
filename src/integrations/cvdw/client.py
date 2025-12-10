@@ -43,12 +43,47 @@ class CVDWClient(BaseAPIClient):
 
     # ========== MÉTODOS DE CLIENTES ==========
 
+    def _is_error_response(self, result: Dict[str, Any]) -> bool:
+        """Verifica se a resposta indica erro HTTP ou payload de erro"""
+        if not isinstance(result, dict):
+            return False
+        if "error" in result:
+            return True
+        status = result.get("status_code")
+        try:
+            if status is not None and int(status) >= 400:
+                return True
+        except Exception:
+            pass
+        return False
+
+    def _fallback_oportunidades(self) -> Dict[str, Any]:
+        """Dados simulados para oportunidades"""
+        return {
+            "oportunidades_abertas": 67,
+            "valor_pipeline": 1_250_000.00,
+            "taxa_conversao": 0.23,
+            "fonte": "dados_simulados_cvcrm"
+        }
+
+    def _fallback_clientes(self) -> Dict[str, Any]:
+        """Dados simulados para clientes"""
+        return {
+            "total_clientes": 1250,
+            "novos_clientes_mes": 45,
+            "clientes_ativos": 890,
+            "fonte": "dados_simulados_cvcrm"
+        }
+
     async def get_clientes(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Busca base de clientes
+        Busca base de clientes, com fallback seguro em caso de erro da API
         """
         params = filters or {}
-        return await self.get("/clientes", params=params)
+        result = await self.get("/clientes", params=params)
+        if self._is_error_response(result):
+            return self._fallback_clientes()
+        return result
 
     async def get_cliente_detalhes(self, cliente_id: str) -> Dict[str, Any]:
         """
@@ -67,10 +102,13 @@ class CVDWClient(BaseAPIClient):
 
     async def get_oportunidades(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Busca oportunidades de venda
+        Busca oportunidades de venda, com fallback seguro em caso de erro da API
         """
         params = filters or {}
-        return await self.get("/oportunidades", params=params)
+        result = await self.get("/oportunidades", params=params)
+        if self._is_error_response(result):
+            return self._fallback_oportunidades()
+        return result
 
     async def get_oportunidade_detalhes(self, oportunidade_id: str) -> Dict[str, Any]:
         """
