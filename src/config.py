@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://localhost:5173",  # Vite default port
+        "http://localhost:5174",  # Alternate Vite port
         "http://localhost:8000"
     ]
 

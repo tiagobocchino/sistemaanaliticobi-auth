@@ -15,3 +15,16 @@ pydantic-settings
 # Development (optional)
 httpx
 requests
+
+# AI Agent Framework
+agno>=1.1.1
+openai  # Para usar modelos OpenAI ou compatíveis
+
+# Graficos e Visualizacao
+matplotlib
+plotly
+pandas
+
+# Processamento de documentacao
+beautifulsoup4
+lxml

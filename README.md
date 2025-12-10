@@ -1,97 +1,71 @@
-# 📊 Analytics Platform
+# Analytics Platform
 
-**Plataforma para administração de acessos às análises da empresa**
+Plataforma para administra��o de acessos �s an�lises da empresa.
 
-[![Status](https://img.shields.io/badge/Status-Produção%20Ready-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Produ��o%20Ready-green.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)]()
 [![React](https://img.shields.io/badge/React-18+-blue.svg)]()
 [![Supabase](https://img.shields.io/badge/Supabase-Cloud-orange.svg)]()
 
-## 🚀 Início Rápido
+## In�cio R�pido
 
-### 1. Limpar Cache
-```bash
+1) Limpar cache
+```
 ./scripts/LIMPAR_TUDO.bat
 ```
 
-### 2. Iniciar Sistema
-```bash
+2) Iniciar sistema
+```
 ./scripts/INICIAR_SISTEMA.bat
 ```
 
-### 3. Acessar
-- **URL:** http://localhost:5173/login
-- **Email:** tiago.bocchino@4pcapital.com.br
-- **Senha:** Admin123!@#
+3) Acessar
+- URL: http://localhost:5173/login
+- Email: tiago.bocchino@4pcapital.com.br
+- Senha: Admin123!@#
 
-## 📁 Estrutura do Projeto
+4) Agentes IA
+- Pr�-requisito: Ollama com `llama3.2` (`ollama pull llama3.2`) ou `OPENAI_API_KEY`/`GROQ_API_KEY`.
+- Frontend: http://localhost:5173/agents
+- Backend: POST /agents/chat (usar token JWT de login)
 
+## Estrutura do Projeto
 ```
 analytcs/
-├── 📁 docs/                 # 📖 Documentação completa
-├── 📁 scripts/              # 🛠️ Scripts de inicialização e utilitários
-├── 📁 database/             # 🗄️ Scripts SQL e migrações
-├── 📁 tests/                # 🧪 Testes automatizados
-├── 📁 frontend/             # ⚛️ Aplicação React
-├── 📁 src/                  # 🐍 Backend FastAPI
-└── 📁 static/               # 📎 Arquivos estáticos
+  docs/          # Documenta��o
+  scripts/       # Scripts de inicializa��o e utilit�rios
+  database/      # SQL e migra��es
+  tests/         # Testes automatizados
+  frontend/      # React + Vite
+  src/           # Backend FastAPI
+  static/        # Arquivos est�ticos
+  lastro/        # Arquivos obsoletos/backup (n�o usados em runtime)
 ```
 
-## 📚 Documentação
+## Documenta��o
+- [CLAUDE.md](docs/CLAUDE.md) � Contexto e arquitetura
+- [CREDENCIAIS.md](docs/CREDENCIAIS.md) � Acessos e logins
+- [SECURITY_AUDIT_REPORT.md](docs/SECURITY_AUDIT_REPORT.md) � Auditoria
+- [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) � Guia de testes
+- [AI_AGENT_SETUP.md](docs/AI_AGENT_SETUP.md) � Guia do agente IA
 
-- **[📖 Guia Completo](docs/CLAUDE.md)** - Contexto e arquitetura
-- **[🚀 Início Rápido](scripts/INICIO_RAPIDO.md)** - Como usar o sistema
-- **[🔐 Credenciais](docs/CREDENCIAIS.md)** - Acessos e logins
-- **[🛡️ Segurança](docs/SECURITY_AUDIT_REPORT.md)** - Relatório de auditoria
-- **[🧪 Testes](docs/TESTING_GUIDE.md)** - Guia de testes
+## Funcionalidades
+- Autentica��o completa (Supabase Auth + JWT)
+- Gest�o de usu�rios (admin)
+- Dashboards Power BI (Compras, SDRs, Pastas) com controle por cargo/divis�o
+- Chat de Agentes IA em `/agents` consumindo `/agents/chat`
+- Testes automatizados (backend + E2E)
 
-## 🎯 Funcionalidades
+## Stack
+- Backend: Python 3.8+, FastAPI, Supabase (PostgreSQL + Auth), Pydantic, Pytest
+- Frontend: React 18, Vite, React Router, Axios com interceptors, CSS
 
-### ✅ Implementadas
-- **🔐 Autenticação Completa** - Login/cadastro com Supabase
-- **👥 Gestão de Usuários** - Admin panel para gerenciar acessos
-- **📊 3 Dashboards Power BI** - Compras, SDRs, Pastas
-- **🔒 Controle de Permissões** - Baseado em cargo/divisão
-- **🧪 Testes Automatizados** - Backend + E2E com Selenium
-- **🛡️ Segurança Avançada** - Auditoria completa realizada
+## Deploy/Produ��o
+- CORS restrito a 3000/5173/5174/8000
+- Vari�veis sens�veis em .env / api_credentials.env (n�o versionar)
+- Agentes IA: usar Ollama ou chaves OpenAI/Groq
 
-### 🎯 Sistema 100% Funcional
-- ✅ Backend API (FastAPI + Supabase)
-- ✅ Frontend React responsivo
-- ✅ Autenticação JWT segura
-- ✅ Controle granular de acessos
-- ✅ Interface moderna e intuitiva
-
-## 🏗️ Stack Tecnológico
-
-### Backend
-- **🐍 Python 3.8+** com FastAPI
-- **🗄️ Supabase** (PostgreSQL + Auth)
-- **🔐 JWT** tokens com refresh
-- **✅ Pydantic** validação
-- **🧪 Pytest** + Selenium para testes
-
-### Frontend
-- **⚛️ React 18** com Vite
-- **🧭 React Router** navegação
-- **📡 Axios** + interceptors automáticos
-- **🎨 CSS** responsivo
-- **🔄 Context API** gerenciamento de estado
-
-## 🚀 Deploy e Produção
-
-- ✅ **Segurança Auditada** - Nenhuma vulnerabilidade crítica
-- ✅ **Testes Aprovados** - 60%+ de cobertura
-- ✅ **Documentação Completa** - Guia passo-a-passo
-- ✅ **Estrutura Organizada** - Arquivos bem organizados
-- ✅ **Produção Ready** - Pronto para deploy
-
-## 📞 Suporte
-
-**Criado por:** Grok Code Assistant
-**Data:** Dezembro 2025
-**Status:** ✅ **SISTEMA COMPLETO E FUNCIONAL**
-
----
-
-**🎉 Bem-vindo à Analytics Platform - Sua plataforma de análises empresariais!**
+## Suporte
+- Criado por: Grok Code Assistant
+- Data: Dezembro 2025
+- Status: SISTEMA COMPLETO E FUNCIONAL

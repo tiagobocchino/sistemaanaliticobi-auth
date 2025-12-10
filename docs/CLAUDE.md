@@ -1759,3 +1759,16 @@ http://localhost:5173/login
 **Status:** âœ… **SISTEMA 100% FUNCIONAL - PRONTO PARA USO**
 
 ---
+
+## Atualização 10/12/2025 - Agentes IA (frontend + backend)
+
+- Frontend: página `/agents` agora com chat funcional (arquivo `frontend/src/pages/Agents.jsx`, estilos em `frontend/src/styles/Agents.css`).
+- Backend: rotas `/agents/chat`, `/agents/capabilities`, `/agents/health`; `process_query` do agente usa `agent.arun` para compatibilidade com tools assíncronas.
+- Dependências para IA: Ollama com modelo `llama3.2` (ou `OPENAI_API_KEY` / `GROQ_API_KEY`).
+- CORS: habilitado para 5173/5174 além de 3000/8000.
+- Pastas de histórico: `lastro/` criada para abrigar arquivos obsoletos (docs de sessões antigas e testes rápidos de agente).
+- Arquivos movidos para `lastro/` (não usados em runtime):
+  - `docs/RESUMO_SESSAO_09-12-2024.md`, `docs/SESSAO_09_DEZ_2024_FINAL.md`
+  - `docs/DIAGNOSTICO_LOGIN.md`, `docs/DIAGNOSTICO_TESTE.md`
+  - `test_agent_simple.py`, `test_chat_agents.py`
+- Item pendente conhecido: se o modelo IA estiver ativo, o Agno já usa `arun`; caso use ferramentas adicionais, validar se todas são compatíveis com execução assíncrona.

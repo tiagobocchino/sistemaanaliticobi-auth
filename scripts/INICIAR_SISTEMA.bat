@@ -17,8 +17,8 @@ echo SERVIDORES INICIADOS!
 echo ========================================
 echo.
 echo Backend: http://localhost:8000
-echo Frontend: http://localhost:5173
-echo Teste: http://localhost:5173/test.html
+echo Frontend: http://localhost:5174
+echo Teste: http://localhost:5174/test.html
 echo.
 echo Pressione qualquer tecla para fechar este terminal...
 pause >nul
