@@ -1,100 +1,156 @@
+
 .analysis-list-container {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  color: var(--text);
 }
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .header h2 {
-  color: #2c3e50;
-  font-size: 2.5em;
-  margin-bottom: 10px;
+  color: var(--white);
+  font-size: 2.2em;
+  margin-bottom: 8px;
 }
 
 .header p {
-  color: #7f8c8d;
+  color: rgba(244, 236, 220, 0.8);
+  font-size: 1.1em;
+}
+
+.powerbi-section h3,
+.analyses-section h3 {
+  color: var(--white);
+  font-size: 1.6em;
+  margin: 30px 0 16px 0;
+  text-align: center;
+}
+
+.powerbi-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.powerbi-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(200, 168, 106, 0.22);
+  border-radius: 14px;
+  padding: 22px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+
+.powerbi-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  border-color: rgba(200, 168, 106, 0.4);
+}
+
+.powerbi-icon {
+  font-size: 2.4em;
+  color: var(--primary);
+  background: rgba(200, 168, 106, 0.12);
+  border: 1px solid rgba(200, 168, 106, 0.3);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.powerbi-info {
+  color: var(--white);
+  flex: 1;
+}
+
+.powerbi-name {
   font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.powerbi-desc {
+  font-size: 0.98em;
+  opacity: 0.85;
+  line-height: 1.4;
 }
 
 .analyses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 25px;
-  margin-top: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
 }
 
 .analysis-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-  padding: 25px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  padding: 22px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(200, 168, 106, 0.15);
   position: relative;
   overflow: hidden;
 }
 
 .analysis-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-color: #3498db;
-}
-
-.analysis-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3498db, #2980b9);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  border-color: rgba(200, 168, 106, 0.35);
 }
 
 .analysis-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
+  gap: 10px;
 }
 
 .analysis-icon {
-  font-size: 2em;
-  margin-right: 15px;
-  background: #f8f9fa;
+  font-size: 1.6em;
+  background: rgba(200, 168, 106, 0.12);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 10px;
+  color: var(--primary);
 }
 
 .analysis-type {
-  background: #e8f4f8;
-  color: #2980b9;
-  padding: 4px 12px;
-  border-radius: 20px;
+  background: rgba(200, 168, 106, 0.16);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 14px;
   font-size: 0.85em;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .analysis-content {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .analysis-title {
-  color: #2c3e50;
-  font-size: 1.3em;
-  margin-bottom: 10px;
+  color: var(--white);
+  font-size: 1.2em;
+  margin-bottom: 6px;
   line-height: 1.3;
 }
 
 .analysis-description {
-  color: #7f8c8d;
-  font-size: 0.95em;
-  line-height: 1.5;
+  color: rgba(244, 236, 220, 0.85);
+  font-size: 0.96em;
+  line-height: 1.45;
   margin: 0;
 }
 
@@ -105,7 +161,7 @@
 }
 
 .view-btn {
-  color: #3498db;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.95em;
   display: flex;
@@ -113,62 +169,39 @@
   gap: 5px;
 }
 
-.analysis-card:hover .view-btn {
-  color: #2980b9;
-}
-
-/* Estados especiais */
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  margin-top: 40px;
-}
-
-.empty-state h3 {
-  color: #2c3e50;
-  margin-bottom: 15px;
-}
-
-.empty-state p {
-  color: #7f8c8d;
-  font-size: 1.1em;
-}
-
-.loading, .error {
+.empty-state,
+.loading,
+.error {
   text-align: center;
   padding: 60px 20px;
-  font-size: 1.2em;
-  border-radius: 8px;
-  margin-top: 40px;
-}
-
-.loading {
-  background: #f8f9fa;
-  color: #6c757d;
+  font-size: 1.1em;
+  border-radius: 10px;
+  margin-top: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 168, 106, 0.12);
+  color: var(--white);
 }
 
 .error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background: rgba(156, 72, 72, 0.1);
+  border-color: rgba(156, 72, 72, 0.4);
 }
 
 .retry-btn {
-  background: #3498db;
-  color: white;
-  border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #0b0b0b;
+  border: 1px solid rgba(200, 168, 106, 0.4);
   padding: 12px 24px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
-  margin-top: 20px;
-  transition: background 0.2s;
+  margin-top: 16px;
+  transition: all 0.2s;
 }
 
 .retry-btn:hover {
-  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
 /* Responsividade */
@@ -183,15 +216,11 @@
 
   .analyses-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
   }
 
   .analysis-card {
-    padding: 20px;
-  }
-
-  .analysis-title {
-    font-size: 1.2em;
+    padding: 18px;
   }
 }
 
@@ -201,126 +230,6 @@
   }
 
   .analysis-header {
-    margin-bottom: 15px;
-  }
-
-  .analysis-icon {
-    font-size: 1.5em;
-    padding: 8px;
-  }
-}
-
-/* Power BI Dashboards Section */
-.powerbi-section {
-  margin-bottom: 40px;
-}
-
-.powerbi-section h3 {
-  color: #2c3e50;
-  font-size: 1.8em;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.powerbi-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.powerbi-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 12px;
-  padding: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.powerbi-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.powerbi-btn:hover::before {
-  left: 100%;
-}
-
-.powerbi-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.powerbi-icon {
-  font-size: 3em;
-  color: white;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.powerbi-info {
-  color: white;
-  flex: 1;
-}
-
-.powerbi-name {
-  font-size: 1.4em;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.powerbi-desc {
-  font-size: 1em;
-  opacity: 0.9;
-  line-height: 1.4;
-}
-
-.analyses-section h3 {
-  color: #2c3e50;
-  font-size: 1.8em;
-  margin: 40px 0 20px 0;
-  text-align: center;
-}
-
-/* Responsive Design for Power BI buttons */
-@media (max-width: 768px) {
-  .powerbi-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .powerbi-btn {
-    flex-direction: column;
-    text-align: center;
-    gap: 15px;
-  }
-
-  .powerbi-icon {
-    font-size: 2.5em;
-    padding: 12px;
-  }
-
-  .powerbi-name {
-    font-size: 1.2em;
-  }
-
-  .powerbi-desc {
-    font-size: 0.9em;
+    margin-bottom: 12px;
   }
 }

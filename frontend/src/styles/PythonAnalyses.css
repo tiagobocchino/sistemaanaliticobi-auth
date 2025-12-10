@@ -10,22 +10,22 @@
 
 .page-header h1 {
   font-size: 2rem;
-  color: #1a1a1a;
+  color: var(--white);
   margin-bottom: 0.5rem;
 }
 
 .page-header p {
-  color: #666;
+  color: rgba(244, 236, 220, 0.85);
   font-size: 1.1rem;
 }
 
 .coming-soon-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-dark) 100%);
   border-radius: 12px;
   padding: 3rem;
   text-align: center;
-  color: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  color: var(--white);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .coming-soon-icon {
@@ -55,11 +55,12 @@
 }
 
 .features-preview {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   padding: 2rem;
   margin-top: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .features-preview h3 {
