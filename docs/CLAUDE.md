@@ -1772,3 +1772,7 @@ http://localhost:5173/login
   - `docs/DIAGNOSTICO_LOGIN.md`, `docs/DIAGNOSTICO_TESTE.md`
   - `test_agent_simple.py`, `test_chat_agents.py`
 - Item pendente conhecido: se o modelo IA estiver ativo, o Agno já usa `arun`; caso use ferramentas adicionais, validar se todas são compatíveis com execução assíncrona.
+## Regras de Trabalho (não quebrar existentes)
+- Nunca introduzir mudanças que quebrem funcionalidades já estáveis (login, análises, dashboards, CORS).
+- Ao ajustar novas features (ex.: agentes), preservar rotas/fluxos já validados e preferir fallback seguro em caso de erro.
+- Sempre reiniciar backend/frontend após ajustes críticos para validar login e `/agents`.
