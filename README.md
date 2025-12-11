@@ -1,71 +1,53 @@
 # Analytics Platform
 
-Plataforma para administração de acessos às análises da empresa.
+Plataforma de autenticacao, dashboards Power BI e agente IA.
 
-[![Status](https://img.shields.io/badge/Status-Produção%20Ready-green.svg)]()
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)]()
-[![React](https://img.shields.io/badge/React-18+-blue.svg)]()
-[![Supabase](https://img.shields.io/badge/Supabase-Cloud-orange.svg)]()
-
-## Início Rápido
-
-1) Limpar cache
+## Como rodar (dev)
+1. Backend
 ```
-./scripts/LIMPAR_TUDO.bat
+cd C:\Users\tiago\OneDrive\Desktop\analytcs
+python main.py
 ```
-
-2) Iniciar sistema
+2. Frontend (React Native Web via Expo)
 ```
-./scripts/INICIAR_SISTEMA.bat
+cd C:\Users\tiago\OneDrive\Desktop\analytcs\frontend-rn
+set EXPO_OFFLINE=1
+npx expo start --web --port 8085
 ```
+3. Acessar
+- URL: http://localhost:8085/?platform=web
+- Login: tiago.bocchino@4pcapital.com.br / Admin123!@#
 
-3) Acessar
-- URL: http://localhost:5173/login
-- Email: tiago.bocchino@4pcapital.com.br
-- Senha: Admin123!@#
+## Requisitos
+- Python 3.8+
+- Node 18+
+- Ollama com modelo `llama3.2` (ou GROQ_API_KEY/OPENAI_API_KEY se preferir outro provedor)
 
-4) Agentes IA
-- Pré-requisito: Ollama com `llama3.2` (`ollama pull llama3.2`) ou `OPENAI_API_KEY`/`GROQ_API_KEY`.
-- Frontend: http://localhost:5173/agents
-- Backend: POST /agents/chat (usar token JWT de login)
-
-## Estrutura do Projeto
+## Estrutura
 ```
 analytcs/
-  docs/          # Documentação
-  scripts/       # Scripts de inicialização e utilitários
-  database/      # SQL e migrações
-  tests/         # Testes automatizados
-  frontend/      # React + Vite
-  src/           # Backend FastAPI
-  static/        # Arquivos estáticos
-  lastro/        # Arquivos obsoletos/backup (não usados em runtime)
+  src/           # backend FastAPI
+  frontend-rn/   # frontend Expo React Native + TypeScript (web)
+  docs/          # documentacao
+  database/      # scripts SQL
+  scripts/       # utilitarios
+  lastro/        # arquivos obsoletos/backup
 ```
 
-## Documentação
-- [CLAUDE.md](docs/CLAUDE.md) – Contexto e arquitetura
-- [CREDENCIAIS.md](docs/CREDENCIAIS.md) – Acessos e logins
-- [SECURITY_AUDIT_REPORT.md](docs/SECURITY_AUDIT_REPORT.md) – Auditoria
-- [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) – Guia de testes
-- [AI_AGENT_SETUP.md](docs/AI_AGENT_SETUP.md) – Guia do agente IA
+## CORS
+Permitidos: http://localhost:3000, 5173, 5174, 8000, 8082, 8084, 8085.
 
-## Funcionalidades
-- Autenticação completa (Supabase Auth + JWT)
-- Gestão de usuários (admin)
-- Dashboards Power BI (Compras, SDRs, Pastas) com controle por cargo/divisão
-- Chat de Agentes IA em `/agents` consumindo `/agents/chat`
-- Testes automatizados (backend + E2E)
+## Branches
+- main: backend + frontend-rn (atual)
+- lastro: historico com frontend React/Vite legado
 
-## Stack
-- Backend: Python 3.8+, FastAPI, Supabase (PostgreSQL + Auth), Pydantic, Pytest
-- Frontend: React 18, Vite, React Router, Axios com interceptors, CSS
+## Agente IA
+- Endpoint: POST /agents/chat (usa token JWT de login)
+- Modelo preferencial: Ollama `llama3.2` em http://localhost:11434/v1 (ou GROQ/OPENAI se configurados)
 
-## Deploy/Produção
-- CORS restrito a 3000/5173/5174/8000
-- Variáveis sensíveis em .env / api_credentials.env (não versionar)
-- Agentes IA: usar Ollama ou chaves OpenAI/Groq
-
-## Suporte
-- Criado por: Grok Code Assistant
-- Data: Dezembro 2025
-- Status: SISTEMA COMPLETO E FUNCIONAL
+## Documentacao
+- docs/CLAUDE.md (contexto)
+- docs/CREDENCIAIS.md
+- docs/SECURITY_AUDIT_REPORT.md
+- docs/TESTING_GUIDE.md
+- docs/AI_AGENT_SETUP.md

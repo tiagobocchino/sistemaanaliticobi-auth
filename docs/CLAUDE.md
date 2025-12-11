@@ -1,3 +1,10 @@
+# Atualizacao 2025-12-11 (Resumo rapido)
+- Frontend principal agora e Expo React Native + TypeScript em `frontend-rn` (roda via `npx expo start --web --port 8085` com `EXPO_OFFLINE=1`).
+- Backend FastAPI mantido em `src/`; CORS liberado para 8082/8084/8085.
+- Frontend React/Vite legado foi removido do main e mantido apenas na branch `lastro`.
+- Credenciais dev: tiago.bocchino@4pcapital.com.br / Admin123!@#.
+- Agente IA: preferir Ollama `llama3.2` em http://localhost:11434/v1 (ou GROQ/OPENAI se configurado).
+
 # Claude Context Guide - Analytics Platform
 
 ## VisÃ£o Geral do Projeto
@@ -1760,19 +1767,19 @@ http://localhost:5173/login
 
 ---
 
-## Atualização 10/12/2025 - Agentes IA (frontend + backend)
+## Atualizao 10/12/2025 - Agentes IA (frontend + backend)
 
-- Frontend: página `/agents` agora com chat funcional (arquivo `frontend/src/pages/Agents.jsx`, estilos em `frontend/src/styles/Agents.css`).
-- Backend: rotas `/agents/chat`, `/agents/capabilities`, `/agents/health`; `process_query` do agente usa `agent.arun` para compatibilidade com tools assíncronas.
-- Dependências para IA: Ollama com modelo `llama3.2` (ou `OPENAI_API_KEY` / `GROQ_API_KEY`).
-- CORS: habilitado para 5173/5174 além de 3000/8000.
-- Pastas de histórico: `lastro/` criada para abrigar arquivos obsoletos (docs de sessões antigas e testes rápidos de agente).
-- Arquivos movidos para `lastro/` (não usados em runtime):
+- Frontend: pgina `/agents` agora com chat funcional (arquivo `frontend/src/pages/Agents.jsx`, estilos em `frontend/src/styles/Agents.css`).
+- Backend: rotas `/agents/chat`, `/agents/capabilities`, `/agents/health`; `process_query` do agente usa `agent.arun` para compatibilidade com tools assncronas.
+- Dependncias para IA: Ollama com modelo `llama3.2` (ou `OPENAI_API_KEY` / `GROQ_API_KEY`).
+- CORS: habilitado para 5173/5174 alm de 3000/8000.
+- Pastas de histrico: `lastro/` criada para abrigar arquivos obsoletos (docs de sesses antigas e testes rpidos de agente).
+- Arquivos movidos para `lastro/` (no usados em runtime):
   - `docs/RESUMO_SESSAO_09-12-2024.md`, `docs/SESSAO_09_DEZ_2024_FINAL.md`
   - `docs/DIAGNOSTICO_LOGIN.md`, `docs/DIAGNOSTICO_TESTE.md`
   - `test_agent_simple.py`, `test_chat_agents.py`
-- Item pendente conhecido: se o modelo IA estiver ativo, o Agno já usa `arun`; caso use ferramentas adicionais, validar se todas são compatíveis com execução assíncrona.
-## Regras de Trabalho (não quebrar existentes)
-- Nunca introduzir mudanças que quebrem funcionalidades já estáveis (login, análises, dashboards, CORS).
-- Ao ajustar novas features (ex.: agentes), preservar rotas/fluxos já validados e preferir fallback seguro em caso de erro.
-- Sempre reiniciar backend/frontend após ajustes críticos para validar login e `/agents`.
+- Item pendente conhecido: se o modelo IA estiver ativo, o Agno j usa `arun`; caso use ferramentas adicionais, validar se todas so compatveis com execuo assncrona.
+## Regras de Trabalho (no quebrar existentes)
+- Nunca introduzir mudanas que quebrem funcionalidades j estveis (login, anlises, dashboards, CORS).
+- Ao ajustar novas features (ex.: agentes), preservar rotas/fluxos j validados e preferir fallback seguro em caso de erro.
+- Sempre reiniciar backend/frontend aps ajustes crticos para validar login e `/agents`.
