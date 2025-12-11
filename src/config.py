@@ -22,7 +22,10 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",  # Vite default port
         "http://localhost:5174",  # Alternate Vite port
-        "http://localhost:8000"
+        "http://localhost:8000",
+        "http://localhost:8082",  # Expo web dev
+        "http://localhost:8084",  # Expo web fallback
+        "http://localhost:8085",  # Expo web fallback
     ]
 
     # JWT
