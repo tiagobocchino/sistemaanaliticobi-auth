@@ -40,18 +40,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await api.get('/auth/me');
       setUser(res.data);
-    } catch (e) {
+    } catch {
       await AsyncStorage.removeItem('auth_token');
       setUser(null);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const res = await api.post('/auth/signin', { email, password });
+    // garante que um token inválido antigo não atrapalhe
+    await AsyncStorage.removeItem('auth_token');
+    const res = await api.post('/auth/signin', { email: email.trim(), password });
     const token = res.data?.access_token;
     if (token) {
       await AsyncStorage.setItem('auth_token', token);
       await fetchMe();
+    } else {
+      throw new Error('Token não retornado pelo servidor');
     }
   };
 

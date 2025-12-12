@@ -48,8 +48,8 @@ class AnalyticsAgent:
         Configure the LLM provider.
         Order: Ollama (local) -> Groq (if key) -> OpenAI (only if USE_OPENAI=true).
         """
-        # Ollama usa o endpoint OpenAI-compatible; nome do modelo deve bater com a tag local (ex: llama3.2:latest)
-        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+        # Ollama usa o endpoint OpenAI-compatible; nome do modelo deve bater com a tag local (ex: llama3.2)
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
         ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         try:
             return OpenAIChat(

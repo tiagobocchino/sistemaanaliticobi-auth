@@ -5,6 +5,7 @@ Documentação: https://desenvolvedor.cvcrm.com.br/reference/
 import os
 from typing import Dict, Any, Optional, List
 from ..base_client import BaseAPIClient
+from src.config import get_settings
 
 
 class CVDWClient(BaseAPIClient):
@@ -16,12 +17,13 @@ class CVDWClient(BaseAPIClient):
     def __init__(self):
         # Base URL da API CVDW
         # Default para API real (ajustável via CVDW_BASE_URL)
-        base_url = os.getenv("CVDW_BASE_URL", "https://bpincorporadora.cvcrm.com.br/api/v1/cvdw")
+        settings = get_settings()
+        base_url = settings.cvdw_base_url or os.getenv("CVDW_BASE_URL", "https://bpincorporadora.cvcrm.com.br/api/v1/cvdw")
 
-        # Configurações específicas do CVDW
-        self.api_key = self._get_api_key()
-        self.email = os.getenv("CVDW_EMAIL")
-        self.account_id = os.getenv("CVDW_ACCOUNT_ID")
+        # Configurações específicas do CVDW (preferir settings)
+        self.api_key = settings.cvdw_api_key or self._get_api_key()
+        self.email = settings.cvdw_email or os.getenv("CVDW_EMAIL")
+        self.account_id = settings.cvdw_account_id or os.getenv("CVDW_ACCOUNT_ID")
 
         super().__init__(base_url, self.api_key, timeout=30)
 
@@ -38,8 +40,12 @@ class CVDWClient(BaseAPIClient):
                 'X-API-Key': self.api_key,
                 'X-Account-ID': self.account_id or '',
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             })
+        if self.email:
+            headers['email'] = self.email
+        if self.api_key:
+            headers['token'] = self.api_key
 
         return headers
 
@@ -77,11 +83,22 @@ class CVDWClient(BaseAPIClient):
             "fonte": "dados_simulados_cvcrm"
         }
 
+    def _with_auth(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Anexa email/token às chamadas, pois a API exige esses campos.
+        """
+        merged = params.copy() if params else {}
+        if self.email:
+            merged.setdefault("email", self.email)
+        if self.api_key:
+            merged.setdefault("token", self.api_key)
+        return merged
+
     async def get_clientes(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Busca base de clientes, com fallback seguro em caso de erro da API
         """
-        params = filters or {}
+        params = self._with_auth(filters)
         result = await self.get("/clientes", params=params)
         if self._is_error_response(result):
             return self._fallback_clientes()
@@ -106,8 +123,11 @@ class CVDWClient(BaseAPIClient):
         """
         Busca oportunidades de venda, com fallback seguro em caso de erro da API
         """
-        params = filters or {}
-        result = await self.get("/oportunidades", params=params)
+        params = self._with_auth(filters)
+        # endpoints documentados: /vendas ou /oportunidades; tentar ambos
+        result = await self.get("/vendas", params=params)
+        if self._is_error_response(result):
+            result = await self.get("/oportunidades", params=params)
         if self._is_error_response(result):
             return self._fallback_oportunidades()
         return result

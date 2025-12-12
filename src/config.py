@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     secret_key: str
     environment: str = "development"
 
+    cvdw_base_url: str | None = None
+    cvdw_api_key: str | None = None
+    cvdw_email: str | None = None
+    cvdw_account_id: str | None = None
+
     # CORS
     cors_origins: list[str] = [
         "http://localhost:3000",
