@@ -36,6 +36,7 @@ class AnalyticsAgent:
             tools=[
                 self.find_api_endpoints,
                 self.fetch_data_from_api,
+                self.query_raw_data,
                 self.explain_analysis,
                 self.generate_charts,
             ],
@@ -345,6 +346,116 @@ class AnalyticsAgent:
 
         except Exception as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    async def query_raw_data(
+        self,
+        table_name: str,
+        filters: Optional[Dict[str, Any]] = None,
+        limit: int = 50
+    ) -> str:
+        """
+        Tool: Consulta dados RAW das tabelas internas do Supabase.
+
+        Use esta tool quando o usuario perguntar sobre dados de:
+        - leads: prospects, contatos, clientes potenciais
+        - vendas: vendas realizadas, contratos fechados
+        - reservas: reservas de imoveis, apartamentos reservados
+        - unidades: imoveis, apartamentos, unidades disponiveis
+        - corretores: vendedores, equipe de vendas
+        - pessoas: clientes, compradores, cadastro de pessoas
+        - imobiliarias: imobiliarias parceiras, construtoras
+        - repasses: comissoes, repasses financeiros
+
+        Args:
+            table_name: Nome da tabela (leads, vendas, reservas, unidades,
+                        corretores, pessoas, imobiliarias, repasses)
+            filters: Filtros opcionais como {"ativo": "S", "cidade": "Brasília"}
+            limit: Numero maximo de registros (padrao: 50, max: 500)
+
+        Returns:
+            JSON string com os dados da tabela
+        """
+        # Validação de segurança
+        ALLOWED_TABLES = {
+            'leads', 'vendas', 'reservas', 'unidades',
+            'corretores', 'pessoas', 'imobiliarias', 'repasses'
+        }
+
+        if table_name not in ALLOWED_TABLES:
+            return json.dumps({
+                "error": f"Tabela invalida. Use uma de: {', '.join(ALLOWED_TABLES)}"
+            }, ensure_ascii=False)
+
+        # Limite máximo de segurança
+        limit = min(limit, 500)
+
+        try:
+            # Lista de colunas permitidas para cada tabela (evita injection)
+            ALLOWED_COLUMNS = {
+                'leads': ['ativo', 'cidade', 'estado', 'situacao', 'origem'],
+                'vendas': ['ativo', 'cidade', 'contrato_interno'],
+                'reservas': ['ativo', 'cidade', 'bloco'],
+                'unidades': ['ativo', 'bloco', 'andar', 'etapa'],
+                'corretores': ['ativo', 'ativo_login'],
+                'pessoas': ['ativo', 'cidade', 'estado'],
+                'imobiliarias': ['ativo', 'cidade'],
+                'repasses': ['ativo', 'cidade']
+            }
+
+            # Construir query segura usando métodos do Supabase
+            query = supabase_admin_client.table(table_name).select("*")
+
+            # Aplicar filtros de forma segura (previne SQL injection)
+            if filters:
+                allowed = ALLOWED_COLUMNS.get(table_name, [])
+
+                for key, value in filters.items():
+                    if key not in allowed:
+                        return json.dumps({
+                            "error": f"Coluna '{key}' nao permitida para tabela {table_name}. Use: {', '.join(allowed)}"
+                        }, ensure_ascii=False)
+                    query = query.eq(key, value)
+
+            query = query.limit(limit)
+            result = query.execute()
+
+            # Filtrar dados sensíveis antes de retornar
+            filtered_data = self._filter_sensitive_fields(result.data)
+
+            return json.dumps({
+                "table": table_name,
+                "count": len(filtered_data),
+                "data": filtered_data,
+                "filters_applied": filters or {}
+            }, ensure_ascii=False, indent=2)
+
+        except Exception as e:
+            return json.dumps({
+                "error": f"Erro ao consultar {table_name}: {str(e)}"
+            }, ensure_ascii=False)
+
+    def _filter_sensitive_fields(self, data: List[Dict]) -> List[Dict]:
+        """Remove ou mascara campos sensiveis antes de retornar ao LLM"""
+        SENSITIVE_FIELDS = {
+            'documento', 'cpf', 'cnpj', 'documento_cliente',
+            'email', 'telefone', 'celular', 'rg', 'cnh'
+        }
+
+        filtered = []
+        for item in data:
+            filtered_item = {}
+            for key, value in item.items():
+                if key.lower() in SENSITIVE_FIELDS:
+                    # Mascarar em vez de remover (mantém contexto)
+                    if value and isinstance(value, str):
+                        filtered_item[key] = value[:3] + "***" + value[-2:] if len(value) > 5 else "***"
+                    else:
+                        filtered_item[key] = "***"
+                else:
+                    filtered_item[key] = value
+            filtered.append(filtered_item)
+
+        return filtered
 
     def explain_analysis(
         self,
