@@ -28,3 +28,6 @@ pandas
 # Processamento de documentacao
 beautifulsoup4
 lxml
+
+# Cache (opcional - melhor performance)
+redis>=5.0.0

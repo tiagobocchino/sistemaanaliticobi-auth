@@ -10,10 +10,17 @@ from agno.models.openai import OpenAIChat
 from .api_doc_reader import api_doc_reader
 from .analysis_explainer import analysis_explainer, AnalysisExplanation
 from .chart_generator import chart_generator
+from .trend_analyzer import trend_analyzer, comparative_analyzer
+from .predictive_insights import predictive_insights
+from .alert_generator import alert_generator
+from .report_summarizer import report_summarizer
+from .cache_manager import cache_manager, conversation_memory
+from .monitoring import audit_logger, performance_monitor, usage_tracker
 from ..integrations.sienge.client import SiengeClient
 from ..integrations.cvdw.client import CVDWClient
 from ..config import get_settings
 from ..supabase_client import supabase_admin_client
+import time
 
 
 class AnalyticsAgent:
@@ -39,6 +46,12 @@ class AnalyticsAgent:
                 self.query_raw_data,
                 self.explain_analysis,
                 self.generate_charts,
+                self.analyze_trends,
+                self.compare_periods,
+                self.forecast_future,
+                self.detect_anomalies,
+                self.generate_alerts,
+                self.create_summary_report,
             ],
             markdown=True,
             debug_mode=False,
@@ -87,6 +100,8 @@ class AnalyticsAgent:
         self, user_id: UUID, query: str, permissions: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Processa uma consulta com IA ou fallback baseado em regras."""
+        start_time = time.time()
+
         context = {
             "user_id": str(user_id),
             "permissions": permissions,
@@ -101,23 +116,64 @@ class AnalyticsAgent:
         if permissions.get("can_access_powerbi"):
             context["available_apis"].append("Power BI Dashboards")
 
+        # Verificar histórico de conversas
+        conversation_context = conversation_memory.get_context(str(user_id), last_n=2)
+
         system_prompt = self._build_system_prompt(context)
+        if conversation_context and conversation_context != "Sem histórico anterior.":
+            system_prompt += f"\n\nContexto de conversas anteriores:\n{conversation_context}"
 
         try:
             if self.agent.model:
                 try:
                     response: RunOutput = await self.agent.arun(query, context=system_prompt)
-                    return {
+
+                    tools_used = [call.function.name for call in (response.tool_calls or [])]
+                    result = {
                         "success": True,
                         "response": response.content,
-                        "tools_used": [call.function.name for call in (response.tool_calls or [])],
+                        "tools_used": tools_used,
                         "explanation": None,
                         "charts": [],
                     }
-                except Exception:
+
+                    # Registrar métricas
+                    duration_ms = (time.time() - start_time) * 1000
+                    performance_monitor.record_metric("agent_query_time", duration_ms)
+                    performance_monitor.increment_counter("total_agent_queries")
+
+                    # Audit log
+                    audit_logger.log_agent_query(
+                        user_id=str(user_id),
+                        query=query,
+                        tools_used=tools_used,
+                        response_length=len(response.content),
+                        success=True
+                    )
+
+                    # Salvar na memória
+                    conversation_memory.save_message(
+                        user_id=str(user_id),
+                        message=query,
+                        response=response.content[:500],  # Resumo
+                        metadata={"tools_used": tools_used, "duration_ms": duration_ms}
+                    )
+
+                    return result
+                except Exception as e:
+                    audit_logger.log_error(
+                        user_id=str(user_id),
+                        error_type="agent_processing_error",
+                        error_message=str(e)
+                    )
                     return await self._fallback_process_query(query, context)
             return await self._fallback_process_query(query, context)
         except Exception as e:
+            audit_logger.log_error(
+                user_id=str(user_id),
+                error_type="query_error",
+                error_message=str(e)
+            )
             return {"success": False, "error": str(e), "response": f"Erro ao processar consulta: {e}"}
 
     def _build_system_prompt(self, context: Dict[str, Any]) -> str:
@@ -351,10 +407,12 @@ class AnalyticsAgent:
         self,
         table_name: str,
         filters: Optional[Dict[str, Any]] = None,
-        limit: int = 50
+        limit: int = 50,
+        offset: int = 0,
+        order_by: Optional[str] = None
     ) -> str:
         """
-        Tool: Consulta dados RAW das tabelas internas do Supabase.
+        Tool: Consulta dados RAW das tabelas internas do Supabase com paginação.
 
         Use esta tool quando o usuario perguntar sobre dados de:
         - leads: prospects, contatos, clientes potenciais
@@ -371,9 +429,11 @@ class AnalyticsAgent:
                         corretores, pessoas, imobiliarias, repasses)
             filters: Filtros opcionais como {"ativo": "S", "cidade": "Brasília"}
             limit: Numero maximo de registros (padrao: 50, max: 500)
+            offset: Número de registros a pular (para paginação)
+            order_by: Coluna para ordenação (ex: "created_at")
 
         Returns:
-            JSON string com os dados da tabela
+            JSON string com os dados da tabela e informações de paginação
         """
         # Validação de segurança
         ALLOWED_TABLES = {
@@ -403,7 +463,7 @@ class AnalyticsAgent:
             }
 
             # Construir query segura usando métodos do Supabase
-            query = supabase_admin_client.table(table_name).select("*")
+            query = supabase_admin_client.table(table_name).select("*", count='exact')
 
             # Aplicar filtros de forma segura (previne SQL injection)
             if filters:
@@ -416,17 +476,38 @@ class AnalyticsAgent:
                         }, ensure_ascii=False)
                     query = query.eq(key, value)
 
-            query = query.limit(limit)
+            # Aplicar ordenação se especificada
+            if order_by:
+                # Validar que a coluna existe
+                allowed_order_cols = ALLOWED_COLUMNS.get(table_name, []) + ['id', 'created_at', 'updated_at']
+                if order_by.lstrip('-') in allowed_order_cols:
+                    # Suporta ordenação desc com prefixo '-'
+                    if order_by.startswith('-'):
+                        query = query.order(order_by[1:], desc=True)
+                    else:
+                        query = query.order(order_by)
+
+            # Aplicar paginação
+            query = query.range(offset, offset + limit - 1)
             result = query.execute()
 
             # Filtrar dados sensíveis antes de retornar
             filtered_data = self._filter_sensitive_fields(result.data)
 
+            # Obter contagem total para paginação
+            total_count = result.count if hasattr(result, 'count') else len(filtered_data)
+
             return json.dumps({
                 "table": table_name,
                 "count": len(filtered_data),
+                "total_count": total_count,
+                "offset": offset,
+                "limit": limit,
+                "has_more": (offset + limit) < total_count,
+                "next_offset": offset + limit if (offset + limit) < total_count else None,
                 "data": filtered_data,
-                "filters_applied": filters or {}
+                "filters_applied": filters or {},
+                "order_by": order_by
             }, ensure_ascii=False, indent=2)
 
         except Exception as e:
@@ -497,6 +578,193 @@ class AnalyticsAgent:
 
         return json.dumps(result, ensure_ascii=False, indent=2)
 
+    def analyze_trends(
+        self,
+        data: str,
+        date_column: str = 'data',
+        value_column: str = 'valor',
+        period: str = 'monthly'
+    ) -> str:
+        """
+        Tool: Analisa tendências em dados temporais
+
+        Args:
+            data: JSON string com lista de dados
+            date_column: Nome da coluna de data
+            value_column: Nome da coluna de valor
+            period: Período de agregação ('daily', 'weekly', 'monthly')
+
+        Returns:
+            JSON com análise de tendências
+        """
+        try:
+            data_list = json.loads(data) if isinstance(data, str) else data
+            result = trend_analyzer.analyze_sales_trend(
+                data_list,
+                date_column=date_column,
+                value_column=value_column,
+                period=period
+            )
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
+    def compare_periods(
+        self,
+        data: str,
+        date_column: str = 'data',
+        value_column: str = 'valor',
+        period1_start: Optional[str] = None,
+        period1_end: Optional[str] = None,
+        period2_start: Optional[str] = None,
+        period2_end: Optional[str] = None
+    ) -> str:
+        """
+        Tool: Compara métricas entre dois períodos
+
+        Args:
+            data: JSON string com dados
+            date_column: Nome da coluna de data
+            value_column: Nome da coluna de valor
+            period1_start/end: Datas do primeiro período
+            period2_start/end: Datas do segundo período
+
+        Returns:
+            JSON com análise comparativa
+        """
+        try:
+            data_list = json.loads(data) if isinstance(data, str) else data
+            result = comparative_analyzer.compare_periods(
+                data_list,
+                date_column=date_column,
+                value_column=value_column,
+                period1_start=period1_start,
+                period1_end=period1_end,
+                period2_start=period2_start,
+                period2_end=period2_end
+            )
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
+    def forecast_future(
+        self,
+        data: str,
+        date_column: str = 'data',
+        value_column: str = 'valor',
+        periods_ahead: int = 3
+    ) -> str:
+        """
+        Tool: Gera previsões para períodos futuros
+
+        Args:
+            data: JSON string com dados históricos
+            date_column: Nome da coluna de data
+            value_column: Nome da coluna de valor
+            periods_ahead: Quantos períodos prever (padrão: 3)
+
+        Returns:
+            JSON com previsões e intervalos de confiança
+        """
+        try:
+            data_list = json.loads(data) if isinstance(data, str) else data
+            result = predictive_insights.forecast_sales(
+                data_list,
+                date_column=date_column,
+                value_column=value_column,
+                periods_ahead=periods_ahead
+            )
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
+    def detect_anomalies(
+        self,
+        data: str,
+        date_column: str = 'data',
+        value_column: str = 'valor',
+        threshold_std: float = 2.0
+    ) -> str:
+        """
+        Tool: Detecta anomalias estatísticas nos dados
+
+        Args:
+            data: JSON string com dados
+            date_column: Nome da coluna de data
+            value_column: Nome da coluna de valor
+            threshold_std: Desvios padrão para considerar anomalia (padrão: 2.0)
+
+        Returns:
+            JSON com anomalias detectadas
+        """
+        try:
+            data_list = json.loads(data) if isinstance(data, str) else data
+            result = alert_generator.analyze_anomalies(
+                data_list,
+                date_column=date_column,
+                value_column=value_column,
+                threshold_std=threshold_std
+            )
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
+    def generate_alerts(
+        self,
+        current_data: str,
+        historical_data: Optional[str] = None,
+        thresholds: Optional[str] = None
+    ) -> str:
+        """
+        Tool: Gera alertas de performance baseados em thresholds
+
+        Args:
+            current_data: JSON com dados atuais
+            historical_data: JSON com dados históricos (opcional)
+            thresholds: JSON com thresholds personalizados (opcional)
+
+        Returns:
+            JSON com alertas gerados
+        """
+        try:
+            current = json.loads(current_data) if isinstance(current_data, str) else current_data
+            historical = json.loads(historical_data) if historical_data and isinstance(historical_data, str) else []
+            thresh = json.loads(thresholds) if thresholds and isinstance(thresholds, str) else None
+
+            result = alert_generator.generate_performance_alerts(
+                current,
+                historical,
+                thresh
+            )
+            return json.dumps({"alertas": result}, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
+    def create_summary_report(
+        self,
+        data: str,
+        report_type: str = 'vendas'
+    ) -> str:
+        """
+        Tool: Gera sumário executivo dos dados
+
+        Args:
+            data: JSON string com dados para sumarizar
+            report_type: Tipo de relatório ('vendas', 'financeiro', 'clientes', 'geral')
+
+        Returns:
+            JSON com sumário executivo estruturado
+        """
+        try:
+            data_dict = json.loads(data) if isinstance(data, str) else data
+            result = report_summarizer.generate_executive_summary(
+                data_dict,
+                report_type=report_type
+            )
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            return json.dumps({"erro": str(e)}, ensure_ascii=False)
+
     async def initialize(self):
         """Inicializa o agente e seus componentes."""
         print("Inicializando Analytics AI Agent...")
@@ -505,6 +773,7 @@ class AnalyticsAgent:
         print(f" - Modelo: {self.agent.model.id if self.agent.model else 'Fallback (sem IA)'}")
         print(f" - Tools: {len(self.agent.tools)}")
         print(" - APIs disponiveis: Sienge, CVDW, Power BI")
+        print(" - Novas ferramentas: Trend Analysis, Predictions, Anomaly Detection, Alerts, Reports")
 
 
 # Instancia global
