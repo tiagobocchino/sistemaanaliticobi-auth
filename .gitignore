@@ -99,3 +99,15 @@ api_credentials.env
 *credentials*.env
 *token*.env
 *secret*.env
+token.txt
+*.token
+
+# RAG Index (pode conter dados sensíveis)
+data/rag_index.json
+
+# Test reports (podem conter dados reais)
+test_reports/
+test_*.py
+
+# Claude settings local
+.claude/settings.local.json

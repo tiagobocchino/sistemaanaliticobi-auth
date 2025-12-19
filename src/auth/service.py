@@ -245,7 +245,8 @@ class AuthService:
             Optional[UserResponse]: User data if valid token
         """
         try:
-            response = self.client.auth.get_user(access_token)
+            # Usar admin_client para validar tokens JWT (SERVICE_ROLE_KEY tem permissão)
+            response = self.admin_client.auth.get_user(access_token)
 
             if not response.user:
                 return None

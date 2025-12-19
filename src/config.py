@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     cvdw_email: str | None = None
     cvdw_account_id: str | None = None
 
+    # LLM Configuration
+    ollama_base_url: str = "http://localhost:11434/v1"
+    ollama_model: str = "llama3.2"
+    agent_llm_timeout_seconds: int = 60  # Aumentado para 60s (cold start do modelo)
+
     # CORS
     cors_origins: list[str] = [
         "http://localhost:3000",

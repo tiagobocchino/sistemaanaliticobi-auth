@@ -2,6 +2,21 @@
 
 Plataforma empresarial completa com autenticação, dashboards Power BI, agentes IA avançados e integrações com CVDW/Sienge.
 
+## 🎉 MARCO HISTÓRICO - v2.1 (2025-12-19)
+
+**PRIMEIRO AGENTE RAG FUNCIONANDO END-TO-END!**
+
+Hoje alcançamos o marco mais importante do projeto:
+- ✅ Agente IA respondeu pela primeira vez no frontend
+- ✅ Sistema completo Backend + Frontend + LLM + RAG operacional
+- ✅ Ollama integrado com retry automático e warm-up
+- ✅ RAG recuperando contexto (3 documentos/query)
+- ✅ Testes end-to-end 100% funcionais
+
+**Veja a jornada completa:** `JORNADA.md` - Documentação histórica do zero ao RAG funcional
+
+---
+
 ## Novidades - v2.0 (2025-12-17)
 
 ### Agentes IA Aprimorados
@@ -49,6 +64,7 @@ npx expo start --web --port 8085
 - Node 18+
 - Ollama com modelo `llama3.2` (ou GROQ_API_KEY/OPENAI_API_KEY)
 - Redis (opcional, mas recomendado para produção)
+- RAG local (BM25) com índice em `data/rag_index.json` (sem dependências externas)
 
 ## Instalar Dependências
 
@@ -61,7 +77,16 @@ pip install redis
 
 # Testar sistema
 python test_melhorias.py
+
+# RAG: gerar índice local a partir dos docs
+python scripts/build_rag_index.py
 ```
+
+## RAG (recuperacao de contexto)
+- Índice BM25 local em `data/rag_index.json` (sem dependências externas).
+- Gerar/atualizar: `python scripts/build_rag_index.py`.
+- Variáveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrão 3), `RAG_INDEX_PATH` (padrão data/rag_index.json).
+- Respostas do agente podem incluir `rag_sources` (debug) com as fontes retornadas pelo RAG.
 
 ## Estrutura
 ```
@@ -227,7 +252,8 @@ CVDW_API_KEY=xxx
 
 ---
 
-**Versão**: 2.0.0
-**Data**: 2025-12-17
-**Status**: Produção Desenvolvimento
-**Última Atualização**: Sistema de Agentes IA Avançados + Performance & Cache
+**Versão**: 2.1.0
+**Data**: 2025-12-19
+**Status**: 🎉 Produção Desenvolvimento - RAG Funcionando End-to-End!
+**Última Atualização**: Marco Histórico - Primeiro Agente RAG Completo + Correções de Timeout
+**Veja também**: `JORNADA.md` para o diário completo de desenvolvimento

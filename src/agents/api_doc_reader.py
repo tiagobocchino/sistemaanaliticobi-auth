@@ -454,10 +454,10 @@ class APIDocReader:
         """
         Inicializa o leitor carregando documentação de todas as APIs
         """
-        print("📚 Carregando documentação das APIs...")
+        print("[DOCS] Carregando documentacao das APIs...")
         await self.load_api_documentation("sienge")
         await self.load_api_documentation("cvcrm")
-        print(f"✅ Documentação carregada:")
+        print("[OK] Documentacao carregada:")
         print(f"   - Sienge: {len(self.sienge_endpoints)} endpoints")
         print(f"   - CVCRM: {len(self.cvcrm_endpoints)} endpoints")
 

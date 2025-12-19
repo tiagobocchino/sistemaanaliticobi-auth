@@ -6,6 +6,7 @@ from uuid import UUID
 
 from agno.agent import Agent, RunOutput
 from agno.models.openai import OpenAIChat
+import httpx
 
 from .api_doc_reader import api_doc_reader
 from .analysis_explainer import analysis_explainer, AnalysisExplanation
@@ -16,11 +17,14 @@ from .alert_generator import alert_generator
 from .report_summarizer import report_summarizer
 from .cache_manager import cache_manager, conversation_memory
 from .monitoring import audit_logger, performance_monitor, usage_tracker
+from .rag_store import RagStore
+from .response_formatter import response_formatter
 from ..integrations.sienge.client import SiengeClient
 from ..integrations.cvdw.client import CVDWClient
 from ..config import get_settings
 from ..supabase_client import supabase_admin_client
 import time
+import asyncio
 
 
 class AnalyticsAgent:
@@ -33,6 +37,7 @@ class AnalyticsAgent:
         self.doc_reader = api_doc_reader
         self.explainer = analysis_explainer
         self.chart_gen = chart_generator
+        self.rag_store = RagStore()
 
         # Prefer local Ollama first, then Groq; only use OpenAI if explicitly enabled.
         self.llm = self._setup_llm()
@@ -120,21 +125,44 @@ class AnalyticsAgent:
         conversation_context = conversation_memory.get_context(str(user_id), last_n=2)
 
         system_prompt = self._build_system_prompt(context)
+        rag_context, rag_sources = self._get_rag_context(query)
+        if rag_context:
+            system_prompt += "\n\nContexto recuperado (RAG):\n" + rag_context
         if conversation_context and conversation_context != "Sem histórico anterior.":
             system_prompt += f"\n\nContexto de conversas anteriores:\n{conversation_context}"
 
-        try:
-            if self.agent.model:
-                try:
-                    response: RunOutput = await self.agent.arun(query, context=system_prompt)
+        # Tentar caminho direto sem Agno primeiro (evita timeouts e problemas de tool-calls)
+        direct = await self._llm_direct_response(query, system_prompt)
+        if direct:
+            return {
+                "success": True,
+                "response": direct,
+                "tools_used": ["llm_direct"],
+                "explanation": None,
+                "charts": [],
+                "rag_sources": rag_sources if rag_sources else None,
+            }
 
-                    tools_used = [call.function.name for call in (response.tool_calls or [])]
+        use_agno = os.getenv("AGENT_USE_AGNO", "false").lower() in {"1", "true", "yes"}
+
+        try:
+            if use_agno and self.agent.model:
+                try:
+                    timeout_s = int(os.getenv("AGENT_LLM_TIMEOUT_SECONDS", str(self.settings.agent_llm_timeout_seconds)))
+                    response: RunOutput = await asyncio.wait_for(
+                        self.agent.arun(query, context=system_prompt),
+                        timeout=timeout_s
+                    )
+
+                    tool_calls = getattr(response, "tool_calls", None) or []
+                    tools_used = [call.function.name for call in tool_calls]
                     result = {
                         "success": True,
                         "response": response.content,
                         "tools_used": tools_used,
                         "explanation": None,
                         "charts": [],
+                        "rag_sources": rag_sources if rag_sources else None,
                     }
 
                     # Registrar métricas
@@ -161,13 +189,41 @@ class AnalyticsAgent:
 
                     return result
                 except Exception as e:
+                    # Log detalhado do erro para debug
+                    print(f"[ERROR] LLM falhou: {type(e).__name__}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     audit_logger.log_error(
                         user_id=str(user_id),
                         error_type="agent_processing_error",
                         error_message=str(e)
                     )
-                    return await self._fallback_process_query(query, context)
-            return await self._fallback_process_query(query, context)
+                    direct = await self._llm_direct_response(query, system_prompt)
+                    if direct:
+                        return {
+                            "success": True,
+                            "response": direct,
+                            "tools_used": ["llm_direct"],
+                            "explanation": None,
+                            "charts": [],
+                            "rag_sources": rag_sources if rag_sources else None,
+                        }
+                    fallback = await self._fallback_process_query(query, context)
+                    fallback["rag_sources"] = rag_sources if rag_sources else None
+                    return fallback
+            direct = await self._llm_direct_response(query, system_prompt)
+            if direct:
+                return {
+                    "success": True,
+                    "response": direct,
+                    "tools_used": ["llm_direct"],
+                    "explanation": None,
+                    "charts": [],
+                    "rag_sources": rag_sources if rag_sources else None,
+                }
+            fallback = await self._fallback_process_query(query, context)
+            fallback["rag_sources"] = rag_sources if rag_sources else None
+            return fallback
         except Exception as e:
             audit_logger.log_error(
                 user_id=str(user_id),
@@ -176,17 +232,85 @@ class AnalyticsAgent:
             )
             return {"success": False, "error": str(e), "response": f"Erro ao processar consulta: {e}"}
 
+    def _get_rag_context(self, query: str):
+        enabled = os.getenv("RAG_ENABLED", "true").lower() in {"1", "true", "yes"}
+        if not enabled:
+            return "", []
+        top_k = int(os.getenv("RAG_TOP_K", "3"))
+        try:
+            hits = self.rag_store.query(query, top_k=top_k)
+        except Exception:
+            return "", []
+        if not hits:
+            return "", []
+        parts = []
+        sources = []
+        for i, hit in enumerate(hits, start=1):
+            parts.append(f"[{i}] {hit.source}\n{hit.text}")
+            sources.append(f"{hit.source}")
+        return "\n\n".join(parts), sources
+
+    async def _llm_direct_response(self, query: str, system_prompt: str, retry_count: int = 2) -> Optional[str]:
+        """
+        Fallback direto para o endpoint OpenAI-compatible (Ollama) quando Agno falhar/timeout.
+        Inclui retry automatico para lidar com cold start do modelo.
+        """
+        if not self.llm:
+            return None
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").rstrip("/")
+        model = os.getenv("OLLAMA_MODEL", "llama3.2")
+        timeout_s = int(os.getenv("AGENT_LLM_TIMEOUT_SECONDS", str(self.settings.agent_llm_timeout_seconds)))
+
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query}
+            ],
+            "stream": False,
+        }
+
+        for attempt in range(retry_count + 1):
+            try:
+                print(f"[INFO] Tentativa {attempt + 1}/{retry_count + 1} de chamar Ollama (timeout: {timeout_s}s)...")
+                async with httpx.AsyncClient(timeout=timeout_s) as client:
+                    resp = await client.post(
+                        f"{base_url}/chat/completions",
+                        headers={"Authorization": "Bearer ollama", "Content-Type": "application/json"},
+                        json=payload,
+                    )
+                resp.raise_for_status()
+                data = resp.json()
+                choice = data.get("choices", [{}])[0]
+                message = choice.get("message", {}) if isinstance(choice, dict) else {}
+                content = message.get("content")
+                if content:
+                    print(f"[SUCCESS] Ollama respondeu com sucesso (tentativa {attempt + 1})")
+                return content or None
+            except httpx.ReadTimeout as e:
+                print(f"[WARN] Timeout na tentativa {attempt + 1}/{retry_count + 1}: {e}")
+                if attempt < retry_count:
+                    # Aumentar timeout progressivamente para a proxima tentativa
+                    timeout_s = int(timeout_s * 1.5)
+                    print(f"[INFO] Aumentando timeout para {timeout_s}s na proxima tentativa...")
+                    await asyncio.sleep(1)  # Pequeno delay antes de retry
+                else:
+                    print(f"[ERROR] Todas as {retry_count + 1} tentativas falharam com timeout")
+                    return None
+            except Exception as e:
+                print(f"[ERROR] LLM direto falhou (tentativa {attempt + 1}): {type(e).__name__}: {e}")
+                if attempt < retry_count:
+                    await asyncio.sleep(1)
+                else:
+                    return None
+        return None
+
     def _build_system_prompt(self, context: Dict[str, Any]) -> str:
-        """Prompt de sistema enxuto e sem acentos problematicos."""
-        apis_str = ", ".join(context["available_apis"]) or "dados internos"
-        return (
-            "Voce e um assistente de analises empresariais. "
-            "Responda em portugues, de forma direta e humana. "
-            f"Fontes disponiveis: {apis_str}. "
-            "Quando fizer chamadas, use as tools: find_api_endpoints, fetch_data_from_api, "
-            "explain_analysis, generate_charts. Sempre explique de onde veio o dado e quais filtros/campos usou. "
-            "Se nao tiver dado real, diga o que precisa e sugira proximos passos."
-        )
+        """
+        Constroi o system prompt profissional usando o ResponseFormatter.
+        Instrui o agente a responder como um analista de negocios senior.
+        """
+        return response_formatter.create_system_prompt(context)
 
     async def check_user_permissions(self, user_id: UUID) -> Dict[str, Any]:
         """Busca permissoes do usuario no Supabase usando service role."""
@@ -281,7 +405,16 @@ class AnalyticsAgent:
         )
 
         charts = self.chart_gen.generate_charts_from_analysis(intent, data)
-        response_text = self._format_fallback_response(intent, data, explanation)
+
+        # Usar response_formatter para gerar resposta profissional
+        insights = response_formatter.extract_insights_from_data(data, intent)
+        recommendations = response_formatter.generate_recommendations(data, intent)
+        response_text = response_formatter.format_business_response(
+            question=query,
+            data=data,
+            insights=insights,
+            recommendations=recommendations
+        )
 
         return {
             "success": True,
@@ -291,65 +424,6 @@ class AnalyticsAgent:
             "data": data,
             "tools_used": ["fallback_rule_based"],
         }
-
-    def _format_fallback_response(
-        self, intent: str, data: Dict[str, Any], explanation: AnalysisExplanation
-    ) -> str:
-        """
-        Formata resposta do fallback de forma mais humana e sem bloco tecnico.
-        """
-
-        def fmt_currency(val: float) -> str:
-            try:
-                return f"R$ {val:,.2f}"
-            except Exception:
-                return str(val)
-
-        def fmt_percent(val: float) -> str:
-            try:
-                return f"{val*100:.2f}%"
-            except Exception:
-                return str(val)
-
-        lines: List[str] = []
-
-        if intent == "vendas":
-            cv = data.get("cvdw", {}) if isinstance(data.get("cvdw"), dict) else {}
-            vendas = cv.get("oportunidades_abertas")
-            pipeline = cv.get("valor_pipeline")
-            conversao = cv.get("taxa_conversao")
-
-            linhas_resumo: List[str] = []
-            if vendas is not None:
-                linhas_resumo.append(f"Fechamos {vendas} vendas/oportunidades abertas neste mes.")
-            if pipeline is not None:
-                linhas_resumo.append(f"Pipeline estimado: {fmt_currency(pipeline)}.")
-            if conversao is not None:
-                linhas_resumo.append(f"Taxa de conversao atual: {fmt_percent(conversao)}.")
-
-            if linhas_resumo:
-                lines.append("Resumo rapido das vendas:")
-                lines.extend(linhas_resumo)
-
-            if conversao is not None:
-                lines.append(
-                    "Insight: mantendo essa conversao o potencial de fechamento e bom. "
-                    "Compare com o mesmo periodo do mes passado para confirmar tendencia."
-                )
-
-            lines.append("Fonte: modulo de vendas do CVCRM (endpoint `/oportunidades`).")
-        else:
-            lines.append(f"Entendi sua pergunta sobre {intent}. Aqui o que achei:")
-            for source, source_data in data.items():
-                lines.append(f"- Fonte {source.upper()}:")
-                if isinstance(source_data, dict):
-                    for key, value in source_data.items():
-                        if isinstance(value, (int, float)) and key != "taxa_conversao":
-                            lines.append(f"  • {key}: {fmt_currency(value) if value > 1000 else value}")
-                        elif key == "taxa_conversao":
-                            lines.append(f"  • taxa_conversao: {fmt_percent(value)}")
-
-        return "\n".join(lines)
 
     def find_api_endpoints(self, intent: str, query: str) -> str:
         """
@@ -774,6 +848,23 @@ class AnalyticsAgent:
         print(f" - Tools: {len(self.agent.tools)}")
         print(" - APIs disponiveis: Sienge, CVDW, Power BI")
         print(" - Novas ferramentas: Trend Analysis, Predictions, Anomaly Detection, Alerts, Reports")
+
+        # Warm-up do modelo LLM (carrega na memoria)
+        if self.llm:
+            print("\n[INFO] Fazendo warm-up do modelo LLM...")
+            try:
+                warmup_response = await self._llm_direct_response(
+                    query="ola",
+                    system_prompt="Voce e um assistente. Responda apenas 'ok'.",
+                    retry_count=1
+                )
+                if warmup_response:
+                    print("[SUCCESS] Modelo LLM aquecido e pronto para uso!")
+                else:
+                    print("[WARN] Warm-up falhou. O modelo pode demorar na primeira requisicao.")
+            except Exception as e:
+                print(f"[WARN] Erro no warm-up: {e}. O modelo pode demorar na primeira requisicao.")
+        print("\n" + "="*60)
 
 
 # Instancia global

@@ -1,5 +1,26 @@
 # Claude Context Guide - Analytics Platform
 
+## 🎉 MARCO HISTÓRICO - 2025-12-19 - v2.1
+**PRIMEIRO AGENTE RAG FUNCIONANDO END-TO-END!**
+
+Hoje alcançamos um marco crítico do projeto:
+- ✅ Agente respondeu pela primeira vez no frontend
+- ✅ LLM (Ollama) integrado e funcional
+- ✅ RAG recuperando contexto de documentos (3 docs/query)
+- ✅ Sistema completo Backend + Frontend + IA operacional
+- ✅ Correções de timeout implementadas (retry automático + warm-up)
+
+**Primeira pergunta respondida:** "Quantas vendas temos cadastradas?"
+**Status:** Sistema 100% funcional end-to-end
+
+**Documentação do marco:**
+- `JORNADA.md` - Diário completo de desenvolvimento (do zero ao RAG funcional)
+- `CORRECOES_AGENTE_RAG.md` - Detalhes técnicos das correções de timeout
+
+**Próximo passo:** Melhorar respostas do agente para linguagem natural e profissional.
+
+---
+
 ## Atualizacao 2025-12-17 (Resumo Rapido) - v2.0
 
 - **Frontend Principal**: Expo React Native + TypeScript em `frontend-rn/` (roda via `npx expo start --web --port 8085` com `EXPO_OFFLINE=1`)
@@ -11,6 +32,7 @@
   - Memória contextual de conversas
   - Cache híbrido (Redis + In-Memory)
   - Audit logging completo
+  - **RAG local**: BM25 com índice em `data/rag_index.json` (gerar com `python scripts/build_rag_index.py`; envs: `RAG_ENABLED`, `RAG_TOP_K`, `RAG_INDEX_PATH`)
 - **Integrações**: CVDW CRM + Sienge ERP + Power BI Dashboards
 - **CI/CD**: GitHub Actions para importação diária CVDW às 3h UTC
 - **Novidades v2.0**: Agentes IA Avançados + Performance & Cache + Monitoramento
@@ -841,9 +863,10 @@ tests/
 
 ---
 
-**Última Atualização**: 2025-12-12
-**Atualizado por**: Claude (Sessão - Atualização Completa CLAUDE.md)
-**Status Atual**: Sistema Validado e Funcionando
+**Última Atualização**: 2025-12-19
+**Atualizado por**: Claude (Sessão - Marco Histórico: Primeiro Agente RAG End-to-End Funcional!)
+**Versão**: 2.1 (patch - correções de timeout + documentação completa)
+**Status Atual**: 🎉 Sistema 100% Operacional End-to-End - RAG Funcional!
 
 **Servidores**:
 - Backend API: http://localhost:8000 (FastAPI + Supabase)

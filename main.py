@@ -45,6 +45,14 @@ from src.agents.routes import router as agents_router
 app.include_router(agents_router)
 
 
+# Startup event to initialize agent
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the analytics agent on application startup"""
+    from src.agents.agno_agent import analytics_agent
+    await analytics_agent.initialize()
+
+
 @app.get("/")
 async def root():
     """Root endpoint"""
