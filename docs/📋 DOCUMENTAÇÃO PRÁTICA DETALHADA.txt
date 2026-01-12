@@ -1,0 +1,345 @@
+📋 DOCUMENTAÇÃO PRÁTICA DETALHADA
+🚀 Guia de Implementação Passo a Passo
+Passo 1: Setup Inicial Completo
+bash
+Copy
+# 1. Criar projeto
+mkdir analytics-platform && cd analytics-platform
+
+# 2. Configurar Python
+python -m venv venv
+source venv/bin/activate  # ou venv\Scripts\activate no Windows
+
+# 3. Criar requirements.txt
+cat > requirements.txt << EOF
+fastapi==0.104.1
+uvicorn==0.24.0
+python-dotenv==1.0.0
+pydantic-settings==2.0.3
+httpx==0.25.1
+supabase==2.0.3
+pandas==2.1.3
+numpy==1.25.2
+scikit-learn==1.3.2
+redis==5.0.1
+psutil==5.9.6
+agno==1.1.1
+asyncio==3.4.3
+pytest==7.4.3
+pytest-asyncio==0.21.1
+EOF
+
+# 4. Instalar dependências
+pip install -r requirements.txt
+
+# 5. Criar estrutura
+mkdir -p backend/src/{agents,analyses,auth,cache,integrations,users,monitoring,utils}
+mkdir -p backend/{database,tests,docs}
+mkdir -p frontend-rn/src/{screens,components,hooks,context,api,utils}
+Passo 2: Configuração do Backend
+Python
+Copy
+# backend/.env.example
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SECRET_KEY=your_secret_key_here
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_MODEL=llama3.2
+REDIS_HOST=localhost
+REDIS_PORT=6379
+Passo 3: Implementar Autenticação
+Python
+Copy
+# backend/src/auth/routes.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from .models import UserSignup, UserSignin, UserResponse
+from .service import auth_service
+
+router = APIRouter(prefix="/auth", tags=["Autenticação"])
+
+@router.post("/signup")
+async def signup(user_data: UserSignup):
+    """Registra novo usuário"""
+    try:
+        result = await auth_service.sign_up(user_data)
+        return {
+            "message": "Usuário criado com sucesso",
+            "user_id": result["user"].id
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.post("/signin")
+async def signin(credentials: UserSignin):
+    """Realiza login"""
+    try:
+        result = await auth_service.sign_in(credentials)
+        return {
+            "access_token": result["access_token"],
+            "refresh_token": result["refresh_token"],
+            "user": result["user"]
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais inválidas"
+        )
+Passo 4: Testar a API
+bash
+Copy
+# Iniciar servidor
+cd backend
+python main.py
+
+# Testar endpoints
+curl -X POST http://localhost:8000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123",
+    "full_name": "Test User"
+  }'
+Passo 5: Frontend Básico
+TypeScript
+Copy
+// frontend-rn/App.tsx
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { AuthProvider } from './src/context/AuthContext';
+import LoginScreen from './src/screens/LoginScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+
+const Drawer = createDrawerNavigator();
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <Drawer.Navigator initialRouteName="Login">
+          <Drawer.Screen name="Login" component={LoginScreen} />
+          <Drawer.Screen name="Dashboard" component={DashboardScreen} />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}
+📊 Exemplos Práticos de Uso
+Exemplo 1: Login Completo
+TypeScript
+Copy
+// frontend-rn/src/screens/LoginScreen.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+
+export default function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+      // Navegação automática via AuthProvider
+    } catch (error) {
+      Alert.alert('Erro', 'Credenciais inválidas');
+    }
+  };
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text>Email</Text>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        placeholder="seu@email.com"
+        keyboardType="email-address"
+      />
+      <Text>Senha</Text>
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        placeholder="******"
+        secureTextEntry
+      />
+      <Button title="Entrar" onPress={handleLogin} />
+    </View>
+  );
+}
+Exemplo 2: Consumir API de Análises
+TypeScript
+Copy
+// frontend-rn/src/screens/AnalysesScreen.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { apiClient } from '../api/client';
+
+export default function AnalysesScreen() {
+  const [analyses, setAnalyses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAnalyses();
+  }, []);
+
+  const fetchAnalyses = async () => {
+    try {
+      const response = await apiClient.get('/analyses');
+      setAnalyses(response.data.data);
+    } catch (error) {
+      console.error('Erro ao buscar análises:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderAnalysis = ({ item }) => (
+    <TouchableOpacity
+      style={{ padding: 16, borderBottomWidth: 1, borderColor: '#ccc' }}
+      onPress={() => navigation.navigate('AnalysisDetail', { id: item.id })}
+    >
+      <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{item.nome}</Text>
+      <Text style={{ color: '#666' }}>{item.descricao}</Text>
+      <Text style={{ color: '#999', fontSize: 12 }}>{item.tipo}</Text>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return <Text>Carregando...</Text>;
+  }
+
+  return (
+    <FlatList
+      data={analyses}
+      renderItem={renderAnalysis}
+      keyExtractor={item => item.id.toString()}
+    />
+  );
+}
+Exemplo 3: Chat com Agente IA
+TypeScript
+Copy
+// frontend-rn/src/screens/AgentScreen.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, ScrollView } from 'react-native';
+import { apiClient } from '../api/client';
+
+export default function AgentScreen() {
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+
+  const sendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    const userMessage = { text: inputText, isUser: true };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      const response = await apiClient.post('/agents/chat', {
+        message: inputText
+      });
+
+      const agentMessage = { 
+        text: response.data.response, 
+        isUser: false 
+      };
+      setMessages(prev => [...prev, agentMessage]);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+    }
+
+    setInputText('');
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        {messages.map((msg, index) => (
+          <View
+            key={index}
+            style={{
+              alignSelf: msg.isUser ? 'flex-end' : 'flex-start',
+              backgroundColor: msg.isUser ? '#007AFF' : '#E5E5EA',
+              borderRadius: 16,
+              padding: 12,
+              marginVertical: 4,
+              maxWidth: '80%'
+            }}
+          >
+            <Text style={{ color: msg.isUser ? 'white' : 'black' }}>
+              {msg.text}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+      
+      <View style={{ flexDirection: 'row', padding: 16 }}>
+        <TextInput
+          style={{ 
+            flex: 1, 
+            borderWidth: 1, 
+            borderColor: '#ccc', 
+            borderRadius: 20,
+            paddingHorizontal: 16 
+          }}
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder="Digite sua mensagem..."
+        />
+        <Button title="Enviar" onPress={sendMessage} />
+      </View>
+    </View>
+  );
+}
+🧪 Testes de Integração
+Teste 1: Fluxo Completo de Login
+bash
+Copy
+# 1. Registrar usuário
+curl -X POST http://localhost:8000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "demo@example.com",
+    "password": "demo123",
+    "full_name": "Demo User"
+  }'
+
+# 2. Fazer login
+curl -X POST http://localhost:8000/api/auth/signin \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "demo@example.com",
+    "password": "demo123"
+  }'
+
+# 3. Usar token para acessar dados protegidos
+curl -X GET http://localhost:8000/api/analyses \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+Teste 2: Agente IA
+bash
+Copy
+# Testar agente IA
+curl -X POST http://localhost:8000/api/agents/chat \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Qual a tendência de vendas dos últimos 3 meses?"
+  }'
+Teste 3: Monitoramento
+bash
+Copy
+# Ver status do sistema
+curl http://localhost:8000/api/monitoring/health
+
+# Ver métricas
+curl http://localhost:8000/api/monitoring/metrics/24
+### RAG (recuperacao de contexto)
+- Indice BM25 local em `data/rag_index.json` (sem dependencias externas).
+- Gerar/atualizar: `python scripts/build_rag_index.py`.
+- Variaveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrao 3), `RAG_INDEX_PATH` (padrao data/rag_index.json).
+- Respostas do agente podem incluir `rag_sources` (debug) mostrando as fontes do RAG.

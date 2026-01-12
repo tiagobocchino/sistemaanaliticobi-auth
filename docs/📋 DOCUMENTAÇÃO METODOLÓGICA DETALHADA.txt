@@ -1,0 +1,251 @@
+📋 DOCUMENTAÇÃO METODOLÓGICA DETALHADA
+🎯 Metodologia de Desenvolvimento
+1. Princípios de Arquitetura
+SOLID Principles
+Python
+Copy
+# Exemplo: Single Responsibility Principle
+class UserAuthService:
+    """Apenas responsável por autenticação"""
+    def authenticate(self, credentials: dict) -> User:
+        pass
+
+class UserProfileService:
+    """Apenas responsável por perfil do usuário"""
+    def update_profile(self, user_id: str, data: dict) -> User:
+        pass
+Dependency Injection
+Python
+Copy
+# backend/src/dependencies.py
+from fastapi import Depends
+from typing import Generator
+
+def get_db() -> Generator:
+    """Dependency para obter conexão com banco"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    """Dependency para obter usuário autenticado"""
+    return decode_token(token)
+2. Padrões de Design Utilizados
+Repository Pattern
+Python
+Copy
+# backend/src/repositories/base.py
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, List
+
+T = TypeVar('T')
+
+class BaseRepository(ABC, Generic[T]):
+    """Repository base para operações CRUD"""
+    
+    @abstractmethod
+    async def get_by_id(self, id: int) -> Optional[T]:
+        pass
+    
+    @abstractmethod
+    async def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
+        pass
+    
+    @abstractmethod
+    async def create(self, obj: T) -> T:
+        pass
+    
+    @abstractmethod
+    async def update(self, id: int, obj: T) -> Optional[T]:
+        pass
+    
+    @abstractmethod
+    async def delete(self, id: int) -> bool:
+        pass
+Factory Pattern
+Python
+Copy
+# backend/src/factories/agent_factory.py
+class AgentFactory:
+    """Factory para criar agentes IA"""
+    
+    @staticmethod
+    def create_agent(provider: str, config: Dict) -> AnalyticsAgent:
+        if provider == "ollama":
+            return OllamaAgent(config)
+        elif provider == "openai":
+            return OpenAIAgent(config)
+        elif provider == "groq":
+            return GroqAgent(config)
+        else:
+            raise ValueError(f"Provider não suportado: {provider}")
+3. Metodologia de Testes
+Pirâmide de Testes
+Copy
+    /\
+   /  \  E2E Tests (5%)
+  /____\ Integration Tests (25%)
+ /      \ Unit Tests (70%)
+/________\
+Exemplo de Teste Unitário
+Python
+Copy
+# backend/tests/test_auth.py
+import pytest
+from unittest.mock import Mock, patch
+from src.auth.service import AuthService
+
+class TestAuthService:
+    @pytest.fixture
+    def mock_supabase(self):
+        return Mock()
+    
+    @pytest.fixture
+    def auth_service(self, mock_supabase):
+        return AuthService(mock_supabase)
+    
+    @pytest.mark.asyncio
+    async def test_successful_login(self, auth_service, mock_supabase):
+        # Arrange
+        mock_response = Mock()
+        mock_response.user = Mock(id="user123", email="test@example.com")
+        mock_response.session = Mock(access_token="token123")
+        mock_supabase.auth.sign_in_with_password.return_value = mock_response
+        
+        credentials = {"email": "test@example.com", "password": "password123"}
+        
+        # Act
+        result = await auth_service.sign_in(credentials)
+        
+        # Assert
+        assert result["access_token"] == "token123"
+        assert result["user"].id == "user123"
+    
+    @pytest.mark.asyncio
+    async def test_failed_login_invalid_credentials(self, auth_service, mock_supabase):
+        # Arrange
+        mock_supabase.auth.sign_in_with_password.side_effect = Exception("Invalid credentials")
+        
+        credentials = {"email": "test@example.com", "password": "wrongpassword"}
+        
+        # Act & Assert
+        with pytest.raises(Exception) as exc_info:
+            await auth_service.sign_in(credentials)
+        
+        assert "Invalid credentials" in str(exc_info.value)
+4. Metodologia de Cache
+Cache Strategy Pattern
+Python
+Copy
+# backend/src/cache/strategies.py
+from abc import ABC, abstractmethod
+from typing import Any, Optional
+
+class CacheStrategy(ABC):
+    @abstractmethod
+    async def get(self, key: str) -> Optional[Any]:
+        pass
+    
+    @abstractmethod
+    async def set(self, key: str, value: Any, ttl: int) -> bool:
+        pass
+    
+    @abstractmethod
+    async def delete(self, key: str) -> bool:
+        pass
+
+class RedisStrategy(CacheStrategy):
+    def __init__(self, redis_client):
+        self.redis = redis_client
+    
+    async def get(self, key: str) -> Optional[Any]:
+        value = await self.redis.get(key)
+        return json.loads(value) if value else None
+    
+    async def set(self, key: str, value: Any, ttl: int) -> bool:
+        return await self.redis.setex(key, ttl, json.dumps(value))
+    
+    async def delete(self, key: str) -> bool:
+        return await self.redis.delete(key) > 0
+
+class MemoryStrategy(CacheStrategy):
+    def __init__(self, max_size: int = 1000):
+        self.cache = {}
+        self.expiry = {}
+        self.max_size = max_size
+    
+    async def get(self, key: str) -> Optional[Any]:
+        if key in self.cache:
+            if self.expiry[key] > datetime.now():
+                return self.cache[key]
+            else:
+                del self.cache[key]
+                del self.expiry[key]
+        return None
+    
+    async def set(self, key: str, value: Any, ttl: int) -> bool:
+        if len(self.cache) >= self.max_size:
+            # Remove oldest item
+            oldest_key = min(self.expiry.keys(), key=lambda k: self.expiry[k])
+            del self.cache[oldest_key]
+            del self.expiry[oldest_key]
+        
+        self.cache[key] = value
+        self.expiry[key] = datetime.now() + timedelta(seconds=ttl)
+        return True
+5. Metodologia de Monitoramento
+Métricas de Negócio vs Técnicas
+Python
+Copy
+# backend/src/monitoring/metrics.py
+from dataclasses import dataclass
+from typing import Dict, List
+from datetime import datetime
+
+@dataclass
+class BusinessMetrics:
+    """Métricas de negócio"""
+    revenue: float
+    active_users: int
+    conversion_rate: float
+    avg_ticket: float
+    churn_rate: float
+    
+@dataclass
+class TechnicalMetrics:
+    """Métricas técnicas"""
+    response_time: float
+    error_rate: float
+    cpu_usage: float
+    memory_usage: float
+    cache_hit_rate: float
+    availability: float
+
+class MetricsCollector:
+    def collect_business_metrics(self) -> BusinessMetrics:
+        """Coleta métricas de negócio"""
+        return BusinessMetrics(
+            revenue=self.calculate_revenue(),
+            active_users=self.count_active_users(),
+            conversion_rate=self.calculate_conversion_rate(),
+            avg_ticket=self.calculate_avg_ticket(),
+            churn_rate=self.calculate_churn_rate()
+        )
+    
+    def collect_technical_metrics(self) -> TechnicalMetrics:
+        """Coleta métricas técnicas"""
+        return TechnicalMetrics(
+            response_time=self.measure_response_time(),
+            error_rate=self.calculate_error_rate(),
+            cpu_usage=self.get_cpu_usage(),
+            memory_usage=self.get_memory_usage(),
+            cache_hit_rate=self.get_cache_hit_rate(),
+            availability=self.calculate_availability()
+        )
+### RAG (recuperacao de contexto)
+- Indice BM25 local em `data/rag_index.json` (sem dependencias externas).
+- Gerar/atualizar: `python scripts/build_rag_index.py`.
+- Variaveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrao 3), `RAG_INDEX_PATH` (padrao data/rag_index.json).
+- Respostas do agente podem incluir `rag_sources` (debug) mostrando as fontes do RAG.

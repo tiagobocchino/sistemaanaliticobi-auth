@@ -388,3 +388,9 @@ O sistema usa **Row Level Security** baseado em níveis de acesso:
 Para problemas ou dúvidas, consulte:
 - [Documentação FastAPI](https://fastapi.tiangolo.com/)
 - [Documentação Supabase](https://supabase.com/docs)
+
+## RAG (recuperacao de contexto)
+- Indice BM25 local em `data/rag_index.json` (sem dependencias externas).
+- Gerar/atualizar: `python scripts/build_rag_index.py`.
+- Variaveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrao 3), `RAG_INDEX_PATH` (padrao data/rag_index.json).
+- LLM direto (sem Agno): `AGENT_USE_AGNO=false` (recomendado).

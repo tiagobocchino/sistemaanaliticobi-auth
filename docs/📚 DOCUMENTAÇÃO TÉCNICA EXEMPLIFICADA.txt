@@ -1,0 +1,126 @@
+📚 DOCUMENTAÇÃO TÉCNICA EXEMPLIFICADA
+🎯 Visão Geral do Sistema
+O Analytics Platform é uma solução empresarial completa que integra:
+Backend: FastAPI + Python 3.11+ com arquitetura modular
+Frontend: React Native + Expo com suporte Web/Mobile
+Banco de Dados: Supabase (PostgreSQL com RLS)
+IA: Agno Framework com múltiplos providers (Ollama, OpenAI, Groq)
+Cache: Redis com fallback em memória
+Monitoramento: Sistema completo de métricas e alertas
+🏗️ Arquitetura Técnica
+Copy
+┌─────────────────────────────────────────────────────────────┐
+│                    FRONTEND (React Native)                  │
+├─────────────────────────────────────────────────────────────┤
+│  Screens • Components • Hooks • Context • API Client       │
+│  Navigation • Theme • Cache • Performance                  │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ HTTP/HTTPS
+┌─────────────────────┴───────────────────────────────────────┐
+│                    BACKEND (FastAPI)                       │
+├─────────────────────────────────────────────────────────────┤
+│  Auth • Users • Analyses • Agents • Monitoring • Cache     │
+│  Middleware • Validation • Error Handling • Logging        │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────┐
+│                  DATABASE (Supabase)                       │
+├─────────────────────────────────────────────────────────────┤
+│  PostgreSQL • RLS • Triggers • Functions • Indexes         │
+│  Auth Users • Tables • Policies • Materialized Views       │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────┐
+│              SERVIÇOS EXTERNOS                             │
+├─────────────────────────────────────────────────────────────┤
+│  Ollama (LLM Local) • OpenAI • Groq • Redis • Power BI     │
+└─────────────────────────────────────────────────────────────┘
+🔧 Componentes Principais
+Backend Components
+Python
+Copy
+# Estrutura de diretórios backend/
+backend/
+├── src/
+│   ├── agents/          # Sistema de IA com tools
+│   ├── analyses/        # Gerenciamento de análises
+│   ├── auth/           # Autenticação e autorização
+│   ├── cache/          # Sistema de cache
+│   ├── integrations/   # Integrações externas
+│   ├── monitoring/     # Monitoramento e métricas
+│   ├── users/          # Gerenciamento de usuários
+│   └── utils/          # Utilitários compartilhados
+├── database/           # Scripts SQL
+├── tests/              # Testes automatizados
+└── main.py            # Entry point
+Frontend Components
+TypeScript
+Copy
+// Estrutura de diretórios frontend/
+frontend-rn/
+├── src/
+│   ├── screens/        # Telas da aplicação
+│   ├── components/     # Componentes reutilizáveis
+│   ├── hooks/          # Custom hooks
+│   ├── context/        # Context providers
+│   ├── api/            # Cliente API
+│   └── utils/          # Utilitários
+├── assets/             # Imagens e fontes
+└── App.tsx            # Entry point
+📊 Fluxo de Dados
+Mermaid
+Fullscreen 
+Download 
+Copy
+Code
+Preview
+Requisição
+
+HTTP
+
+Validação
+
+Autorizado
+
+Business Logic
+
+Dados
+
+JSON
+
+UI Update
+
+Usuário
+Frontend RN
+FastAPI Backend
+Auth Middleware
+Service Layer
+Database/Cache
+Response
+⚙️ Configuração de Desenvolvimento
+Variáveis de Ambiente
+bash
+Copy
+# .env
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Security
+SECRET_KEY=your-super-secret-key
+ENVIRONMENT=development
+
+# LLM
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_MODEL=llama3.2
+USE_OLLAMA=true
+
+# Redis (opcional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+### RAG (recuperacao de contexto)
+- Indice BM25 local em `data/rag_index.json` (sem dependencias externas).
+- Gerar/atualizar: `python scripts/build_rag_index.py`.
+- Variaveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrao 3), `RAG_INDEX_PATH` (padrao data/rag_index.json).
+- Respostas do agente podem incluir `rag_sources` (debug) mostrando as fontes do RAG.

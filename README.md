@@ -87,6 +87,12 @@ python scripts/build_rag_index.py
 - Gerar/atualizar: `python scripts/build_rag_index.py`.
 - Variáveis: `RAG_ENABLED=true|false`, `RAG_TOP_K` (padrão 3), `RAG_INDEX_PATH` (padrão data/rag_index.json).
 - Respostas do agente podem incluir `rag_sources` (debug) com as fontes retornadas pelo RAG.
+- LLM direto (sem Agno): `AGENT_USE_AGNO=false` para usar chamada direta ao Ollama (recomendado).
+
+## DNS (quando o dominio estiver pronto)
+- Se o DNS do Supabase ou do dominio interno nao resolver na rede, use:
+  `powershell -ExecutionPolicy Bypass -File scripts/configure_hosts.ps1 -Domain seu-dominio -IPAddress x.x.x.x`
+- Depois execute `ipconfig /flushdns`.
 
 ## Estrutura
 ```

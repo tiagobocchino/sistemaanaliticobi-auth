@@ -253,7 +253,7 @@ class AnalyticsAgent:
     async def _llm_direct_response(self, query: str, system_prompt: str, retry_count: int = 2) -> Optional[str]:
         """
         Fallback direto para o endpoint OpenAI-compatible (Ollama) quando Agno falhar/timeout.
-        Inclui retry automatico para lidar com cold start do modelo.
+        Usa httpx sync em thread para evitar travas no loop async.
         """
         if not self.llm:
             return None
@@ -265,35 +265,37 @@ class AnalyticsAgent:
             "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query}
+                {"role": "user", "content": query},
             ],
             "stream": False,
         }
 
-        for attempt in range(retry_count + 1):
-            try:
-                print(f"[INFO] Tentativa {attempt + 1}/{retry_count + 1} de chamar Ollama (timeout: {timeout_s}s)...")
-                async with httpx.AsyncClient(timeout=timeout_s) as client:
-                    resp = await client.post(
-                        f"{base_url}/chat/completions",
-                        headers={"Authorization": "Bearer ollama", "Content-Type": "application/json"},
-                        json=payload,
-                    )
+        def _sync_call(local_timeout: int) -> Optional[str]:
+            with httpx.Client(timeout=local_timeout) as client:
+                resp = client.post(
+                    f"{base_url}/chat/completions",
+                    headers={"Authorization": "Bearer ollama", "Content-Type": "application/json"},
+                    json=payload,
+                )
                 resp.raise_for_status()
                 data = resp.json()
                 choice = data.get("choices", [{}])[0]
                 message = choice.get("message", {}) if isinstance(choice, dict) else {}
-                content = message.get("content")
+                return message.get("content") or None
+
+        for attempt in range(retry_count + 1):
+            try:
+                print(f"[INFO] Tentativa {attempt + 1}/{retry_count + 1} de chamar Ollama (timeout: {timeout_s}s)...")
+                content = await asyncio.to_thread(_sync_call, timeout_s)
                 if content:
                     print(f"[SUCCESS] Ollama respondeu com sucesso (tentativa {attempt + 1})")
                 return content or None
             except httpx.ReadTimeout as e:
                 print(f"[WARN] Timeout na tentativa {attempt + 1}/{retry_count + 1}: {e}")
                 if attempt < retry_count:
-                    # Aumentar timeout progressivamente para a proxima tentativa
                     timeout_s = int(timeout_s * 1.5)
                     print(f"[INFO] Aumentando timeout para {timeout_s}s na proxima tentativa...")
-                    await asyncio.sleep(1)  # Pequeno delay antes de retry
+                    await asyncio.sleep(1)
                 else:
                     print(f"[ERROR] Todas as {retry_count + 1} tentativas falharam com timeout")
                     return None

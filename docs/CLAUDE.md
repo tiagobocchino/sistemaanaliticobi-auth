@@ -33,6 +33,8 @@ Hoje alcançamos um marco crítico do projeto:
   - Cache híbrido (Redis + In-Memory)
   - Audit logging completo
   - **RAG local**: BM25 com índice em `data/rag_index.json` (gerar com `python scripts/build_rag_index.py`; envs: `RAG_ENABLED`, `RAG_TOP_K`, `RAG_INDEX_PATH`)
+  - **LLM direto**: `AGENT_USE_AGNO=false` para usar Ollama direto (evita timeouts do Agno)
+  - **DNS/hosts**: `scripts/configure_hosts.ps1 -Domain dominio -IPAddress x.x.x.x` (quando o dominio estiver pronto)
 - **Integrações**: CVDW CRM + Sienge ERP + Power BI Dashboards
 - **CI/CD**: GitHub Actions para importação diária CVDW às 3h UTC
 - **Novidades v2.0**: Agentes IA Avançados + Performance & Cache + Monitoramento

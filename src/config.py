@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "llama3.2"
     agent_llm_timeout_seconds: int = 60  # Aumentado para 60s (cold start do modelo)
+    agent_use_agno: bool = False
+
+    # RAG
+    rag_enabled: bool = True
+    rag_top_k: int = 3
+    rag_index_path: str = "data/rag_index.json"
 
     # CORS
     cors_origins: list[str] = [
