@@ -24,9 +24,9 @@ class RedisCacheManager:
             )
             # Testar conexão
             self.redis_client.ping()
-            print("✅ Redis conectado com sucesso")
+            print("Redis connected successfully")
         except Exception as e:
-            print(f"⚠️ Redis não disponível, usando cache em memória: {e}")
+            print(f"Redis unavailable, using in-memory cache: {e}")
             self.redis_client = None
             self.memory_cache = {}
 
@@ -140,11 +140,11 @@ def cache_decorator(prefix: str, expiration: int = 3600, invalidate_patterns: Li
             # Tentar recuperar do cache
             cached_result = cache_manager.get_cached_result(cache_key)
             if cached_result is not None:
-                print(f"🎯 Cache hit: {cache_key}")
+                print(f"Cache hit: {cache_key}")
                 return cached_result
 
             # Executar função
-            print(f"🔄 Cache miss: {cache_key}")
+            print(f"Cache miss: {cache_key}")
             if asyncio.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
             else:

@@ -76,8 +76,8 @@ def test_file_structure():
         "TESTING_GUIDE.md"
     ]
 
-    print("
-🔍 Checking file structure"    missing = []
+    print("\nChecking file structure")
+    missing = []
     for file_path in required_files:
         if not Path(file_path).exists():
             missing.append(file_path)
@@ -94,8 +94,8 @@ def test_file_structure():
 def test_environment_config():
     """Check if environment files exist"""
     env_files = [".env", "frontend/.env"]
-    print("
-🔍 Checking environment configuration"    warnings = []
+    print("\nChecking environment configuration")
+    warnings = []
 
     for env_file in env_files:
         if not Path(env_file).exists():
@@ -140,7 +140,6 @@ def main():
     print("FINAL RESULTS")
     print('='*60)
     print(f"Tests Passed: {passed}/{total}")
-    print(".1f")
 
     if passed == total:
         print("🎉 ALL TESTS PASSED - System v1.0 is VALID!")

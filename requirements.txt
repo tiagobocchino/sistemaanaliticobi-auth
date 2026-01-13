@@ -11,6 +11,8 @@ python-dotenv
 
 # Data validation
 pydantic-settings
+email-validator
+gotrue
 
 # Development (optional)
 httpx

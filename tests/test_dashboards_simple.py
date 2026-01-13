@@ -78,8 +78,8 @@ def test():
         if join_result.data:
             for user in join_result.data:
                 email = user.get('email', '')
-            masked_email = f"{email[:3]}...@{email.split('@')[1]}" if '@' in email else f"{email[:3]}..."
-            print(f"\nUsuario: {masked_email}")
+                masked_email = f"{email[:3]}...@{email.split('@')[1]}" if '@' in email else f"{email[:3]}..."
+                print(f"\nUsuario: {masked_email}")
 
                 cargo = user.get('cargos')
                 if cargo:

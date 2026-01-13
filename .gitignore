@@ -82,6 +82,9 @@ routes.py
 models.py
 dependencies.py
 nul
+!src/**/routes.py
+!src/**/models.py
+!src/**/dependencies.py
 
 # Security check script
 security_check.py
