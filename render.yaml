@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: sistema-analitico-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      # As variáveis abaixo devem ser configuradas no painel do Render
+      # (Settings > Environment Variables)
+      # Não coloque valores sensíveis aqui!
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RAG_ENABLED
+        value: "true"
+      - key: RAG_TOP_K
+        value: "3"
+      - key: AGENT_USE_AGNO
+        value: "false"
+      - key: AGENT_LLM_TIMEOUT_SECONDS
+        value: "60"

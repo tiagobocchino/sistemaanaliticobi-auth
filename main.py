@@ -22,15 +22,27 @@ app = FastAPI(
 )
 
 # Configure CORS
-# CORS liberalizado para ambientes locais (inclui qualquer porta localhost)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_origin_regex=r"http://localhost:\d+",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS para produção (via variável de ambiente) ou desenvolvimento (localhost)
+if settings.environment == "production" and settings.cors_origins_production:
+    # Produção: usar origens específicas da variável de ambiente
+    cors_origins = [origin.strip() for origin in settings.cors_origins_production.split(",")]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Desenvolvimento: CORS liberalizado para localhost
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_origin_regex=r"http://localhost:\d+",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Include authentication routes
 app.include_router(auth_router)
@@ -98,5 +110,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True  # Enable auto-reload during development
+        reload=settings.environment == "development"  # Auto-reload apenas em desenvolvimento
     )

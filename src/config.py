@@ -44,6 +44,8 @@ class Settings(BaseSettings):
         "http://localhost:8084",  # Expo web fallback
         "http://localhost:8085",  # Expo web fallback
     ]
+    # CORS para produção (via variável de ambiente separada por vírgula)
+    cors_origins_production: str | None = None
 
     # JWT
     algorithm: str = "HS256"
